@@ -44,7 +44,7 @@
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 
-#define DB_VERSION 183
+#define DB_VERSION 184
 
 #define DEFAULT_ADMINUSER "admin"
 #define DEFAULT_ADMINPWD "domoticz"
@@ -3384,14 +3384,6 @@ bool CSQLHelper::OpenDatabase()
 				query("ALTER TABLE Users ADD COLUMN [Passkeys] TEXT DEFAULT NULL");
 			}
 		}
-		if (dbversion < 176)
-		{
-			// Normalize Barometer values in Temperature_Calendar.
-			// Before Sept 2023, barometer was stored as actual hPa (e.g., 1013).
-			// Now stored as *10 (e.g., 10130). Patch old data to match.
-			query("UPDATE Temperature_Calendar SET Barometer = Barometer * 10 "
-				"WHERE Barometer > 0 AND Barometer < 8500");
-		}
 		if (dbversion < 177)
 		{
 			if (!DoesColumnExistsInTable("Settings", "Hardware"))
@@ -3475,6 +3467,18 @@ bool CSQLHelper::OpenDatabase()
 		{
 			query("ALTER TABLE DeviceStatus ADD COLUMN [Icon] TEXT DEFAULT ''");
 			query(sqlCreateWebAssets);
+		}
+		if (dbversion < 184)
+		{
+			// Undo the former upgrade step 176, which multiplied every Temperature_Calendar
+			// barometer below 8500 by 10. The storage never changed: Temp+Hum+Baro sensors
+			// other than THBFloat store plain hPa, every other barometer type hPa * 10.
+			// A plain hPa value never exceeds 2000 and a *10 value never exceeds 20000,
+			// so anything above that was multiplied and is divided again.
+			safe_query("UPDATE Temperature_Calendar SET Barometer = Barometer / 10 WHERE Barometer > 2000 AND DeviceRowID IN "
+				"(SELECT ID FROM DeviceStatus WHERE Type = %d AND SubType != %d)", pTypeTEMP_HUM_BARO, sTypeTHBFloat);
+			safe_query("UPDATE Temperature_Calendar SET Barometer = Barometer / 10 WHERE Barometer > 20000 AND DeviceRowID NOT IN "
+				"(SELECT ID FROM DeviceStatus WHERE Type = %d AND SubType != %d)", pTypeTEMP_HUM_BARO, sTypeTHBFloat);
 		}
 	}
 	else if (bNewInstall)
