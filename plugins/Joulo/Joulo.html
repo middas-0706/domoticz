@@ -30,6 +30,7 @@
 .jl-green { color: var(--jl-green); } .jl-orange { color: var(--jl-orange); } .jl-purple { color: var(--jl-purple); } .jl-blue { color: var(--jl-blue); } .jl-red { color: var(--jl-red); }
 .jl-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--jl-muted); margin-right: 6px; }
 .jl-dot.on { background: var(--jl-green); box-shadow: 0 0 6px var(--jl-green); animation: jlp 1.6s infinite; }
+.jl-dot.wait { background: var(--jl-orange); }
 @keyframes jlp { 50% { opacity: .35; } }
 .jl-bar { height: 8px; border-radius: 4px; background: rgba(128,128,128,0.25); margin: 6px 0 4px; position: relative; overflow: hidden; }
 .jl-bar i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; background: var(--jl-accent); transition: width .4s; }
@@ -91,7 +92,7 @@ table.jl-t { width: 100%; border-collapse: collapse; font-size: 0.85em; }
   <div class="jl-cards" ng-if="live()">
     <div class="jl-card">
       <div class="jl-label">{{ ::'Status' | translate }}</div>
-      <div class="jl-value"><span class="jl-dot" ng-class="{on: live().is_charging}"></span>{{ live().is_charging ? ('Charging' | translate) : (live().connection_status || '?') }}</div>
+      <div class="jl-value"><span class="jl-dot" ng-class="{on: live().is_charging && !isWaiting(live()), wait: isWaiting(live())}"></span>{{ isWaiting(live()) ? ('Waiting for power' | translate) : (live().is_charging ? ('Charging' | translate) : (live().connection_status || '?')) }}</div>
       <div class="jl-sub" ng-if="live().current_session">{{ ::'Started' | translate }} {{ clock(live().current_session.started_at) }} &middot; {{ dur(sinceSeconds(live().current_session.started_at)) }}<br ng-if="live().current_session.id_tag"><span ng-if="live().current_session.id_tag">{{ ::'Tag' | translate }}: {{ tagName(live().current_session) }}</span></div>
       <div class="jl-sub" ng-if="!live().current_session">{{ ::'Last seen' | translate }} {{ clock(live().last_seen_at) }}</div>
     </div>
@@ -381,6 +382,8 @@ app.controller('jouloCtrl', function ($scope, $http, $timeout, $element, livesoc
   $scope.selectedCharger = function () {
     return $scope.chargers.filter(function (c) { return c.id === $scope.sel.charger; })[0] || ($scope.chargers.length === 1 ? $scope.chargers[0] : null);
   };
+  // a session is open but the charger is paused, for example a scheduled charge that has not started
+  $scope.isWaiting = function (c) { return !!(c && c.is_charging && String(c.charging_state || '').toLowerCase() === 'paused'); };
   $scope.live = function () {
     var c = $scope.selectedCharger();
     if (c) { return c; }

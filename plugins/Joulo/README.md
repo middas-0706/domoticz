@@ -22,8 +22,8 @@ Per charger (devices, all with history and graphs):
 | ERE yield | Managed counter (EUR) | indicative net value of the ERE credits, history per day |
 | ERE credits | Managed counter | history per day |
 | power, session energy, meter reading | Custom sensors | live |
-| status | Text | Charging / online / offline |
-| charging | Switch | read only |
+| status | Text | Charging / Waiting for power (session open, charger paused, for example a scheduled charge) / online / offline |
+| charging | Switch | read only, on only while power flows |
 | connection | Alert | goes orange or red when the charger is offline, usable for notifications |
 | restart | Push button | only when Allow control and Allow restart are on |
 

@@ -144,5 +144,17 @@ class ClientTests(unittest.TestCase):
         self.assertEqual(captured["body"], {"charger_id": CH, "type": "Soft"})
 
 
+class WaitingTests(unittest.TestCase):
+    def test_paused_session_is_waiting(self):
+        self.assertTrue(joulo_logic.is_waiting({"is_charging": True, "charging_state": "paused", "power_kw": 0}))
+        self.assertTrue(joulo_logic.is_waiting({"is_charging": True, "charging_state": "Paused"}))
+
+    def test_charging_and_idle_are_not_waiting(self):
+        self.assertFalse(joulo_logic.is_waiting({"is_charging": True, "charging_state": "charging", "power_kw": 7.2}))
+        self.assertFalse(joulo_logic.is_waiting({"is_charging": False, "charging_state": "paused"}))
+        self.assertFalse(joulo_logic.is_waiting({"is_charging": True, "charging_state": None}))
+        self.assertFalse(joulo_logic.is_waiting({}))
+
+
 if __name__ == "__main__":
     unittest.main()

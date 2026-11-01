@@ -457,8 +457,12 @@ class BasePlugin:
         d = charger_device_id(c["id"])
         power = c.get("power_kw")
         self._update_value(d, C_POWER, "%.2f" % (power or 0))
-        charging = bool(c.get("is_charging"))
-        state = "Charging" if charging else (c.get("connection_status") or "unknown").capitalize()
+        waiting = joulo_logic.is_waiting(c)
+        charging = bool(c.get("is_charging")) and not waiting
+        if waiting:
+            state = "Waiting for power"
+        else:
+            state = "Charging" if charging else (c.get("connection_status") or "unknown").capitalize()
         self._update_value(d, C_STATUS, state)
         self._write_unit(d, C_CHARGING, 1 if charging else 0, "On" if charging else "Off")
         cs = c.get("current_session") or {}
@@ -700,7 +704,7 @@ class BasePlugin:
         elif Unit == C_CHARGING:
             # read only, put the displayed state back
             live = next((c for c in self.chargers if charger_device_id(c["id"]) == DeviceID), None)
-            on = bool(live and live.get("is_charging"))
+            on = bool(live and live.get("is_charging") and not joulo_logic.is_waiting(live))
             self._write_unit(DeviceID, Unit, 1 if on else 0, "On" if on else "Off")
 
 

@@ -15,6 +15,11 @@ KEEP = (
 )
 
 
+def is_waiting(charger):
+    """A session is open but the charger is paused, for example a scheduled charge that has not started."""
+    return bool(charger.get("is_charging")) and str(charger.get("charging_state") or "").lower() == "paused"
+
+
 def parse_iso(value):
     """Parse a Joulo ISO 8601 timestamp into an aware datetime, None for empty values."""
     if not value:
