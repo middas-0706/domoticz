@@ -209,6 +209,7 @@ main/WebServerHandleGraphDay.cpp
 main/WebServerHandleGraphHour.cpp
 main/WebServerHandleGraphMonthYear.cpp
 main/WebServerHandleGraphUtils.cpp
+main/EnergyBalance.cpp
 main/WebServerHandleGraphWeek.cpp
 main/WebServerHelper.cpp
 main/WindCalculation.cpp

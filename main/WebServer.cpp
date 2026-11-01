@@ -756,6 +756,7 @@ namespace http
 
 			//EnergyDashboard
 			RegisterCommandCode("getenergydashboarddevices", [this](auto&& session, auto&& req, auto&& root) { Cmd_GetEnergyDashboardDevices(session, req, root); });
+			RegisterCommandCode("getenergybalance", [this](auto&& session, auto&& req, auto&& root) { Cmd_GetEnergyBalance(session, req, root); });
 
 			//kWh stats
 			RegisterCommandCode("getkwhstats", [this](auto&& session, auto&& req, auto&& root) { Cmd_GetkWhStats(session, req, root); });

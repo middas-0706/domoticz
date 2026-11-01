@@ -82,7 +82,7 @@ define([
 
                     var batNet           = batCharge - batDischarge;
                     var houseConsumption = p1Import + solarKwh - p1Export - batNet;
-                    var selfSufficiency  = calcSelfSufficiency(solarKwh, p1Export, batDischarge, houseConsumption);
+                    var selfSufficiency  = calcSelfSufficiency(p1Import, houseConsumption);
 
                     ctrl.balance = {
                         selfSufficiency: selfSufficiency,
@@ -90,6 +90,12 @@ define([
                         solarToday:      solarKwh,
                         batNet:          batNet
                     };
+
+                    // The server splits the flows per interval, which is also right for a battery charged from the grid
+                    var balance = ctrl.balance;
+                    getEnergyBalance($http).then(function(eb) {
+                        if (eb && ctrl.balance === balance) { balance.selfSufficiency = eb.SelfSufficiency; }
+                    });
                 }
 
                 function fetchDevices() {

@@ -45,6 +45,7 @@
 #include "../smtpclient/SMTPClient.h"
 #include "../push/BasePush.h"
 #include "../push/McpPush.h"
+#include "EnergyBalance.h"
 #include "../notifications/NotificationHelper.h"
 
 #ifdef ENABLE_PYTHON
@@ -7433,6 +7434,33 @@ namespace http
 					root["result"]["ESettings"] = jesettings;
 				}
 			}
+		}
+
+		void CWebServer::Cmd_GetEnergyBalance(WebEmSession& session, const request& req, Json::Value& root)
+		{
+			_tEnergyBalance eb;
+			CalculateEnergyBalanceToday(eb);
+			root["status"] = "OK";
+			root["title"] = "GetEnergyBalance";
+			root["Method"] = eb.Method;
+			root["Intervals"] = eb.Intervals;
+			root["Import"] = eb.Import;
+			root["Export"] = eb.Export;
+			root["Solar"] = eb.Solar;
+			root["BatteryIn"] = eb.BatteryIn;
+			root["BatteryOut"] = eb.BatteryOut;
+			root["House"] = eb.House;
+			root["SolarToHouse"] = eb.SolarToHouse;
+			root["BatteryToHouse"] = eb.BatteryToHouse;
+			root["GridToHouse"] = eb.GridToHouse;
+			root["SolarToBattery"] = eb.SolarToBattery;
+			root["GridToBattery"] = eb.GridToBattery;
+			root["SolarToGrid"] = eb.SolarToGrid;
+			root["BatteryToGrid"] = eb.BatteryToGrid;
+			if (eb.SelfSufficiency >= 0)
+				root["SelfSufficiency"] = eb.SelfSufficiency;
+			else
+				root["SelfSufficiency"] = Json::Value::null;
 		}
 
 		void CWebServer::Cmd_GetkWhStats(WebEmSession& session, const request& req, Json::Value& root)

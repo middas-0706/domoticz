@@ -1762,6 +1762,9 @@
     <ClInclude Include="..\main\WebServerHandleGraphUtils.h">
       <Filter>Webserver</Filter>
     </ClInclude>
+    <ClInclude Include="..\main\EnergyBalance.h">
+      <Filter>Webserver</Filter>
+    </ClInclude>
     <ClInclude Include="..\main\WebServerHelper.h">
       <Filter>Webserver</Filter>
     </ClInclude>
@@ -3103,6 +3106,9 @@
       <Filter>Webserver</Filter>
     </ClCompile>
     <ClCompile Include="..\main\WebServerHandleGraphUtils.cpp">
+      <Filter>Webserver</Filter>
+    </ClCompile>
+    <ClCompile Include="..\main\EnergyBalance.cpp">
       <Filter>Webserver</Filter>
     </ClCompile>
     <ClCompile Include="..\main\WebServerHandleGraphWeek.cpp">

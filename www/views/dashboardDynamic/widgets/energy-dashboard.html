@@ -213,7 +213,7 @@
             <span>
                 <i class="fa fa-leaf" ng-style="{'color': 'var(--dz-widget-energy-export)'}"></i>
                 {{'Self-sufficiency' | translate}}:
-                <span>{{ctrl.balance.selfSufficiency | number:0}}%</span>
+                <span>{{ ctrl.balance.selfSufficiency === null ? '-' : (ctrl.balance.selfSufficiency | number:0) + '%' }}</span>
             </span>
             <span>{{'House consumption' | translate}}: <span>{{ctrl.balance.houseToday | number:1}} kWh</span></span>
             <span>{{'Solar yield' | translate}}: <span>{{ctrl.balance.solarToday}} kWh</span></span>

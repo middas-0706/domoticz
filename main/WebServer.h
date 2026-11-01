@@ -369,6 +369,7 @@ private:
 
 	void Cmd_GetDynamicPriceDevices(WebEmSession& session, const request& req, Json::Value& root);
 	void Cmd_GetEnergyDashboardDevices(WebEmSession& session, const request& req, Json::Value& root);
+	void Cmd_GetEnergyBalance(WebEmSession& session, const request& req, Json::Value& root);
 
 	void Cmd_GetkWhStats(WebEmSession& session, const request& req, Json::Value& root);
 	void Cmd_ResetkWhStats(WebEmSession& session, const request& req, Json::Value& root);

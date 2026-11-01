@@ -2923,28 +2923,49 @@ function WatchDescriptions(){
 };
 
 /**
- * Calculate self-sufficiency percentage.
+ * Calculate self-sufficiency percentage: the share of the house consumption that did not come from the grid.
  *
- * self_sufficiency = min(100, (solar - p1Export + bat_discharge) / house x 100)
+ * self_sufficiency = (1 - grid_import / house) x 100, limited to 0..100
  *
- * Subtracting p1Export from solar removes the exported portion, leaving only
- * solar that stayed in the local system.  Adding bat_discharge back cancels
- * the battery's contribution to p1Export (battery-to-grid), so the numerator
- * algebraically reduces to (solarToHouse + batToHouse) — the energy that
- * actually powered the house from local sources.
+ * house is grid_import + solar - grid_export - battery_charge + battery_discharge, so solar stored in the battery
+ * counts once, when the battery delivers it to the house. Energy the battery charged from the grid counts as grid
+ * energy. Without a battery this equals (solar - grid_export) / house. The same definition is used by Home Assistant,
+ * evcc and SMA (Autarkiegrad).
  *
- * This is exact for:
- *   - No-battery setups
- *   - Arbitrage batteries (charge from grid, discharge to grid)
- *   - Standard daily solar→battery→house cycles (solar covers house → clamps correctly to 100%)
+ * Daily totals cannot tell a battery charged from solar from one charged from the grid, so a battery that charges
+ * from the grid and delivers back to the grid (trading) reads too low. The server splits the flows per short log
+ * interval instead (getEnergyBalance below); this daily formula is the fallback when that is not available.
  *
- * @param {number} solarKwh        - Solar production today (kWh)
- * @param {number} p1ExportKwh     - Total energy exported to grid today (kWh)
- * @param {number} batDischargeKwh - Battery discharged today (kWh), 0 if no battery
- * @param {number} houseKwh        - Total house consumption today (kWh)
- * @returns {number} Self-sufficiency percentage [0..100]
+ * @param {number} gridImportKwh - Energy imported from the grid today (kWh)
+ * @param {number} houseKwh      - Total house consumption today (kWh)
+ * @returns {?number} Self-sufficiency percentage [0..100], or null when the house consumption is not known yet
  */
-function calcSelfSufficiency(solarKwh, p1ExportKwh, batDischargeKwh, houseKwh) {
-	if (houseKwh <= 0) return 0;
-	return Math.min(100, Math.max(0, (solarKwh - p1ExportKwh + batDischargeKwh) / houseKwh * 100));
+function calcSelfSufficiency(gridImportKwh, houseKwh) {
+	if (!(houseKwh > 0)) return null;
+	return Math.min(100, Math.max(0, (1 - Math.max(0, gridImportKwh) / houseKwh) * 100));
+}
+
+/**
+ * Today's energy flows of the Energy Dashboard devices as calculated by the server per short log interval
+ * (type=command&param=getenergybalance). The server tracks how much of the battery energy came from the grid, so
+ * its SelfSufficiency is also right for a battery that charges from the grid. The answer is shared for a minute
+ * between all callers.
+ *
+ * @param {object} $http - AngularJS $http service of the caller
+ * @returns {Promise<?object>} The getenergybalance answer, or null when it is not available
+ */
+var energyBalanceCache = { time: 0, promise: null };
+function getEnergyBalance($http) {
+	var now = Date.now();
+	if (!energyBalanceCache.promise || (now - energyBalanceCache.time > 60000)) {
+		energyBalanceCache.time = now;
+		energyBalanceCache.promise = $http.get('json.htm', { params: { type: 'command', param: 'getenergybalance' } })
+			.then(function (response) {
+				var data = response.data;
+				return (data && data.status === 'OK' && (data.Method === '5min' || data.Method === 'daily')) ? data : null;
+			}, function () {
+				return null;
+			});
+	}
+	return energyBalanceCache.promise;
 }

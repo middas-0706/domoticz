@@ -303,23 +303,25 @@ define([
                     // Energy balance calculation
                     // battery_net  = energy stored net in battery today (positive = charged)
                     // house        = P1_import + solar - P1_export - battery_net
-                    // self_suff    = min(100, (solar - P1_export + bat_discharge) / house)
-                    //               subtracting P1_export removes exported solar; adding
-                    //               bat_discharge cancels the battery's share of P1_export,
-                    //               so the numerator reduces to (solarToHouse + batToHouse)
+                    // self_suff    = 1 - P1_import / house (share of the house not from the grid)
                     if (ctrl.grid && ctrl.solar) {
                         var solarKwh  = parseKwh(ctrl.solar.counterToday);
                         var importKwh = parseKwh(ctrl.grid.counterToday);
                         var exportKwh = parseKwh(ctrl.grid.counterDelivToday);
                         var batNet    = batImportedKwh - batExportedKwh;
                         var houseKwh  = importKwh + solarKwh - exportKwh - batNet;
-                        var selfSuff  = calcSelfSufficiency(solarKwh, exportKwh, batExportedKwh, houseKwh);
+                        var selfSuff  = calcSelfSufficiency(importKwh, houseKwh);
                         ctrl.balance = {
                             selfSufficiency: selfSuff,
                             solarToday:      solarKwh.toFixed(1),
                             houseToday:      houseKwh,
                             batNet:          batNet
                         };
+                        // The server splits the flows per interval, which is also right for a battery charged from the grid
+                        var balance = ctrl.balance;
+                        getEnergyBalance($http).then(function(eb) {
+                            if (eb && ctrl.balance === balance) { balance.selfSufficiency = eb.SelfSufficiency; }
+                        });
                     } else {
                         ctrl.balance = null;
                     }

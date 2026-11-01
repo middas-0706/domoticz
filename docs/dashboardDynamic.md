@@ -624,13 +624,19 @@ Compact bar showing energy self-sufficiency percentage and today's balance stats
 | Show gauge bar | on | Green→red percentage bar |
 | Refresh interval | 60s | Seconds between data refresh |
 
-Self-sufficiency formula:
+Self-sufficiency is the share of today's house consumption that did not come from the grid, the same definition Home Assistant, evcc and SMA (Autarkiegrad) use. It is calculated by the server (`json.htm?type=command&param=getenergybalance`) from the short log of the grid, solar and battery energy devices selected in the Energy Dashboard settings:
+
+- Per short log interval (normally 5 minutes) the house consumption is `p1Import + solar + batDischarge - p1Export - batCharge`.
+- Within an interval solar goes to the house first, then to the battery, then to the grid; the house takes battery energy before grid energy.
+- The server keeps track of how much of the energy in the battery came from the grid. When the battery delivers to the house, that part counts as grid energy.
+
 ```
-batNet           = batCharge - batDischarge
-houseConsumption = p1Import + solar - p1Export - batNet
-selfSufficiency  = (solar + batDischarge) / houseConsumption × 100
+selfSufficiency = (1 - (gridToHouse + gridEnergyFromBattery) / houseConsumption) × 100
 ```
-Result is clamped to 0–100%. Battery discharge counts as local generation — energy stored earlier from solar and discharged later correctly reduces grid dependence.
+
+So solar stored in the battery counts once, when the battery delivers it to the house, and a battery that charges from the grid (for example on a dynamic tariff) does not make the house look self-sufficient. The result is limited to 0–100% and shows `-` while the house consumption of today is still 0.
+
+When the server has no short log for the grid meter, the widget falls back to today's counters: `selfSufficiency = (1 - p1Import / houseConsumption) × 100` with `houseConsumption = p1Import + solar - p1Export - batCharge + batDischarge`. That is exact without a battery, but reads too low for a battery that charges from the grid and delivers back to the grid.
 
 ---
 

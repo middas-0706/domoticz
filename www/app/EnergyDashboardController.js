@@ -769,13 +769,17 @@ define(['app'], function (app) {
 				$scope.fTotalHomeUsage -= $scope.fBattEnergyIn;
 			}
 
-			// Self-sufficiency: fraction of house consumption covered by solar + battery discharge
-			$scope.fSelfSufficiency = calcSelfSufficiency(
-				$scope.fDaySolar,
-				$scope.fDayNetDeliv,
-				$scope.idBattEnergyOut != -1 ? $scope.fBattEnergyOut : 0,
-				$scope.fTotalHomeUsage
-			);
+			// Self-sufficiency: share of the house consumption that did not come from the grid. The server value splits
+			// the flows per interval, the daily formula is shown until it arrives or when it is not available.
+			if (typeof $scope.fServerSelfSufficiency == 'undefined') {
+				$scope.fSelfSufficiency = calcSelfSufficiency($scope.fDayNetUsage, $scope.fTotalHomeUsage);
+			}
+			getEnergyBalance($http).then(function (eb) {
+				if (eb) {
+					$scope.fServerSelfSufficiency = eb.SelfSufficiency;
+					$scope.fSelfSufficiency = eb.SelfSufficiency;
+				}
+			});
 
 			// House price: sum of individual device prices (each price is already the total cost for today)
 			$scope.fHousePrice = 0;

@@ -784,6 +784,7 @@
     <ClInclude Include="..\main\unzip_stream.h" />
     <ClInclude Include="..\main\WebServerHandleGraphInternals.h" />
     <ClInclude Include="..\main\WebServerHandleGraphUtils.h" />
+    <ClInclude Include="..\main\EnergyBalance.h" />
     <ClInclude Include="..\main\WebServerHelper.h" />
     <ClInclude Include="..\notifications\NotificationBase.h" />
     <ClInclude Include="..\notifications\NotificationBrowser.h" />
@@ -1137,6 +1138,7 @@
     <ClCompile Include="..\main\WebServerHandleGraphHour.cpp" />
     <ClCompile Include="..\main\WebServerHandleGraphMonthYear.cpp" />
     <ClCompile Include="..\main\WebServerHandleGraphUtils.cpp" />
+    <ClCompile Include="..\main\EnergyBalance.cpp" />
     <ClCompile Include="..\main\WebServerHandleGraphWeek.cpp" />
     <ClCompile Include="..\tinyxpath\action_store.cpp" />
     <ClCompile Include="..\tinyxpath\htmlutil.cpp" />
