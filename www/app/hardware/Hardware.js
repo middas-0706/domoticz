@@ -5386,6 +5386,51 @@ define(['app'], function (app) {
 			updateGroupVisibility();
 		}
 
+		var PluginDeviceList = null;
+
+		FillPluginDevicePickers = function ($table) {
+			var $pickers = $table.find("select.plugin-device-picker");
+			if ($pickers.length === 0)
+				return;
+			if (PluginDeviceList === null) {
+				$.ajax({
+					url: "json.htm?type=command&param=getdevices&order=Name&displayhidden=1",
+					async: false,
+					dataType: 'json',
+					success: function (data) {
+						PluginDeviceList = data.result || [];
+					},
+					error: function () {
+						PluginDeviceList = [];
+					}
+				});
+			}
+			var matches = function (d, filter) {
+				var t = d.Type || "";
+				var st = d.SubType || "";
+				if (filter === "kwh") {
+					return (t === "General" && (st === "kWh" || st === "Managed Counter") && (d.SwitchTypeVal === 0 || d.SwitchTypeVal === 4)) ||
+						(t.indexOf("Meter") >= 0 && (d.SwitchTypeVal === 0 || d.SwitchTypeVal === 4)) ||
+						(t === "General" && st === "kWh");
+				}
+				if (filter === "gas")
+					return t.indexOf("Meter") >= 0 && d.SwitchTypeVal === 1;
+				if (filter === "temp")
+					return t.indexOf("Temp") >= 0;
+				return true;
+			};
+			$pickers.each(function () {
+				var $select = $(this);
+				var filter = $select.attr("data-device-filter") || "";
+				$.each(PluginDeviceList, function (i, d) {
+					if (!matches(d, filter))
+						return;
+					var typeStr = (d.SubType && d.SubType !== d.Type) ? d.Type + "/" + d.SubType : d.Type;
+					$select.append($("<option />").val(d.idx).text(d.Name + " (" + d.idx + (typeStr ? ", " + typeStr : "") + ")"));
+				});
+			});
+		};
+
 		CollectPluginSettings = function (selector) {
 			var reservedFields = ["address", "port", "serialport", "username", "password", "extra", "mode1", "mode2", "mode3", "mode4", "mode5", "mode6"];
 			var pluginSettings = {};
@@ -6041,6 +6086,10 @@ define(['app'], function (app) {
 										var checked = (typeof (param.default) != "undefined" && param.default === "true") ? ' checked' : '';
 										PluginParams += '<td><input type="checkbox" id="' + escapeHtml(param.field) + '"' + checked + ' /><label for="' + escapeHtml(param.field) + '"></label></td>';
 									}
+									else if (paramType === "device") {
+										// Filled with the Domoticz devices after the table is in the page
+										PluginParams += '<td><select id="' + escapeHtml(param.field) + '" data-device-filter="' + escapeHtml((typeof (param.filter) != "undefined") ? param.filter : "") + '" style="width:' + escapeHtml(paramWidth) + '" class="combobox ui-corner-all plugin-device-picker"><option value="">-</option></select></td>';
+									}
 									else if (paramType === "number") {
 										var minAttr = (typeof (param.min) != "undefined") ? ' min="' + escapeHtml(param.min) + '"' : '';
 										var maxAttr = (typeof (param.max) != "undefined") ? ' max="' + escapeHtml(param.max) + '"' : '';
@@ -6119,6 +6168,7 @@ define(['app'], function (app) {
 								}
 								PluginParams += '</table>';
 								$("#divpythonplugin").append(PluginParams);
+								FillPluginDevicePickers($("#divpythonplugin").children("table").last());
 							}
 							$("#hardwareparamstable #combotype").append(option);
 							idx++;

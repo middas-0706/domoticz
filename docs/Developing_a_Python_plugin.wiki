@@ -252,6 +252,7 @@ A complete working example is shipped with Domoticz at <code>plugins/examples/Te
 * <code>number</code> &mdash; numeric spinner. Honours <code>min</code>, <code>max</code>, <code>step</code>.
 * <code>boolean</code> &mdash; checkbox. <code>default</code> accepts <code>"true"</code> or <code>"false"</code>.
 * <code>slider</code> &mdash; range slider. Honours <code>min</code>, <code>max</code>, <code>step</code>.
+* <code>device</code> &mdash; dropdown with the Domoticz devices. The value stored in <code>Parameters</code> is the device idx, or an empty string when nothing is selected. Honours <code>filter</code>.
 If <code>type</code> is omitted (or set to a value the UI does not recognise) the field falls back to a plain text input, matching legacy behaviour.
 |-
 |min
@@ -262,6 +263,9 @@ If <code>type</code> is omitted (or set to a value the UI does not recognise) th
 |-
 |step
 |Optional. Increment used by <code>number</code> and <code>slider</code> types.
+|-
+|filter
+|Optional. Only for <code>type="device"</code>. Limits the listed devices: <code>kwh</code> (energy meters), <code>gas</code> (gas meters) or <code>temp</code> (temperature sensors). Without a filter every device is listed.
 |-
 |password
 |Optional. <code>password="true"</code> (or <code>"1"</code>, case-insensitive) masks the value during entry. Works on any text field, not just the <code>Password</code> column. The stored secret is never sent to the browser; on edit the field shows a dot placeholder and can be left blank to keep the stored value — entering a new value replaces it.

@@ -303,6 +303,10 @@ namespace Plugins {
 			}
 			sJson[sJson.length() - 1] = ']';
 		}
+		else if (pObj.IsNone())
+		{
+			sJson += "null";
+		}
 		else if (pObj.IsBool())
 		{
 			sJson += (PyObject_IsTrue(pObj) ? "true" : "false");

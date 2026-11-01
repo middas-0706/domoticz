@@ -1,0 +1,705 @@
+<style>
+.jl-page {
+  --jl-text: var(--dz-text, #e0e0e0);
+  --jl-muted: var(--dz-text-muted, #9ab);
+  --jl-accent: var(--dz-accent-color, #43A4D3);
+  --jl-surface: var(--dz-panel-bg, rgba(255,255,255,0.05));
+  --jl-line: rgba(128,128,128,0.25);
+  --jl-blue: #2f8cff; --jl-green: #66bb6a; --jl-orange: #ffb366; --jl-purple: #c8a0ff; --jl-red: #ef7a6b;
+  padding: 8px 12px; color: var(--jl-text); max-width: 1200px; margin: 0 auto;
+}
+.jl-head { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.jl-head h2 { margin: 0; font-size: 1.3em; display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.jl-head small { color: var(--jl-muted); font-weight: normal; font-size: 0.65em; }
+.jl-page h3 { margin: 0 0 8px; font-size: 0.8em; text-transform: uppercase; letter-spacing: 1px; color: var(--jl-accent); display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.jl-page h3 small { text-transform: none; letter-spacing: 0; color: var(--jl-muted); font-size: 1em; font-weight: normal; }
+.jl-section { background: var(--jl-surface); border-radius: var(--dz-border-radius, 8px); padding: 12px 14px; margin-bottom: 12px; }
+.jl-btn { cursor: pointer; border: 1px solid var(--jl-line); background: rgba(0,0,0,0.2); color: var(--jl-text); border-radius: 6px; padding: 5px 12px; font: inherit; font-size: 0.85em; }
+.jl-btn:hover { border-color: var(--jl-accent); }
+.jl-btn:disabled { opacity: 0.5; cursor: default; }
+.jl-btn.danger { border-color: rgba(239,122,107,0.6); color: var(--jl-red); }
+.jl-btn.active { background: rgba(67,164,211,0.25); border-color: var(--jl-accent); }
+.jl-select { background: rgba(0,0,0,0.2); color: var(--jl-text); border: 1px solid var(--jl-line); border-radius: 6px; padding: 4px 8px; font: inherit; }
+.jl-seg { display: flex; gap: 6px; flex-wrap: wrap; }
+.jl-cards { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; }
+.jl-card { flex: 1; min-width: 170px; background: var(--jl-surface); border-radius: var(--dz-border-radius, 8px); padding: 12px 14px; }
+.jl-section .jl-card { background: rgba(128,128,128,0.12); }
+.jl-label { font-size: 0.75em; text-transform: uppercase; letter-spacing: 1px; color: var(--jl-muted); }
+.jl-value { font-size: 1.7em; font-weight: bold; line-height: 1.25; }
+.jl-sub { font-size: 0.8em; color: var(--jl-muted); line-height: 1.5; }
+.jl-green { color: var(--jl-green); } .jl-orange { color: var(--jl-orange); } .jl-purple { color: var(--jl-purple); } .jl-blue { color: var(--jl-blue); } .jl-red { color: var(--jl-red); }
+.jl-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--jl-muted); margin-right: 6px; }
+.jl-dot.on { background: var(--jl-green); box-shadow: 0 0 6px var(--jl-green); animation: jlp 1.6s infinite; }
+@keyframes jlp { 50% { opacity: .35; } }
+.jl-bar { height: 8px; border-radius: 4px; background: rgba(128,128,128,0.25); margin: 6px 0 4px; position: relative; overflow: hidden; }
+.jl-bar i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; background: var(--jl-accent); transition: width .4s; }
+.jl-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--jl-line); margin-bottom: 12px; overflow-x: auto; }
+.jl-tab { cursor: pointer; background: none; border: 0; border-bottom: 2px solid transparent; color: var(--jl-muted); font: inherit; padding: 9px 14px; white-space: nowrap; }
+.jl-tab:hover { color: var(--jl-text); }
+.jl-tab.active { color: var(--jl-text); border-bottom-color: var(--jl-accent); }
+.jl-badge { display: inline-block; min-width: 16px; padding: 0 5px; margin-left: 4px; border-radius: 9px; font-size: 0.75em; line-height: 16px; text-align: center; background: rgba(128,128,128,0.35); color: var(--jl-text); }
+.jl-badge.warn { background: var(--jl-orange); color: #222; }
+table.jl-t { width: 100%; border-collapse: collapse; font-size: 0.85em; }
+.jl-t th { text-align: left; color: var(--jl-muted); font-weight: normal; padding: 6px 8px; border-bottom: 1px solid var(--jl-line); }
+.jl-t td { padding: 5px 8px; border-bottom: 1px solid rgba(128,128,128,0.12); }
+.jl-t td.n, .jl-t th.n { text-align: right; }
+.jl-pill { padding: 2px 8px; border-radius: 10px; font-size: 0.78em; }
+.jl-pill.live { background: rgba(102,187,106,0.2); color: var(--jl-green); }
+.jl-pill.done { background: rgba(128,128,128,0.2); color: var(--jl-muted); }
+.jl-kv { width: 100%; border-collapse: collapse; font-size: 0.88em; }
+.jl-kv td { padding: 5px 4px; border-bottom: 1px solid var(--jl-line); }
+.jl-kv td:last-child { text-align: right; font-weight: bold; }
+.jl-warn { font-size: 0.82em; margin: 0 0 8px; padding: 6px 10px; border-left: 3px solid var(--jl-orange); background: rgba(255,179,102,0.1); border-radius: 4px; color: var(--jl-text); }
+.jl-warn.err { border-left-color: var(--jl-red); background: rgba(239,122,107,0.12); }
+.jl-help { font-size: 0.8em; color: var(--jl-muted); line-height: 1.5; margin: 6px 0 0; }
+.jl-empty { text-align: center; padding: 24px; color: var(--jl-muted); opacity: .8; }
+.jl-foot { text-align: right; font-size: 0.7em; color: var(--jl-muted); margin-top: 4px; }
+.jl-toast { position: fixed; right: 16px; bottom: 16px; z-index: 1000; padding: 8px 14px; border-radius: 6px; font-size: 0.9em; background: #283750; color: #fff; border: 1px solid var(--jl-accent); box-shadow: 0 2px 10px rgba(0,0,0,0.5); }
+.jl-toast.err { border-color: var(--jl-red); }
+.jl-step td:first-child { width: 28px; }
+@media (max-width: 640px) {
+  .jl-head { flex-direction: column; align-items: flex-start; }
+  .jl-card { min-width: 44%; }
+  .jl-t { display: block; overflow-x: auto; white-space: nowrap; }
+}
+</style>
+
+<div ng-app="domoticz" ng-controller="jouloCtrl" class="jl-page">
+
+  <div class="jl-head">
+    <h2>Joulo
+      <select class="jl-select" ng-if="chargers.length > 1" ng-model="sel.charger" ng-change="viewChanged()">
+        <option value="all">{{ ::'All chargers' | translate }}</option>
+        <option ng-repeat="c in chargers" value="{{c.id}}">{{c.nickname}} ({{c.brand}} {{c.model}})</option>
+      </select>
+      <small ng-if="chargers.length === 1">{{chargers[0].nickname}} ({{chargers[0].brand}} {{chargers[0].model}})</small>
+      <small>{{ headStatus() }}</small>
+    </h2>
+    <div class="jl-seg">
+      <button class="jl-btn" ng-click="refresh()">{{ ::'Refresh' | translate }}</button>
+      <button class="jl-btn" ng-click="reimport()" ng-disabled="setup.import_running">{{ ::'Re-import history' | translate }}</button>
+      <button class="jl-btn danger" ng-if="settings.allow_restart && selectedCharger()" ng-click="restart(selectedCharger())">{{ ::'Restart charger' | translate }}</button>
+    </div>
+  </div>
+
+  <div class="jl-warn err" ng-repeat="p in problems()">{{p}}</div>
+
+  <div class="jl-empty" ng-if="!loaded">{{ ::'Waiting for the Joulo plugin...' | translate }}<br><span class="jl-help">{{ ::'Is the Joulo hardware enabled?' | translate }}</span></div>
+
+  <div ng-if="loaded">
+  <!-- Live -->
+  <div class="jl-cards" ng-if="live()">
+    <div class="jl-card">
+      <div class="jl-label">{{ ::'Status' | translate }}</div>
+      <div class="jl-value"><span class="jl-dot" ng-class="{on: live().is_charging}"></span>{{ live().is_charging ? ('Charging' | translate) : (live().connection_status || '?') }}</div>
+      <div class="jl-sub" ng-if="live().current_session">{{ ::'Started' | translate }} {{ clock(live().current_session.started_at) }} &middot; {{ dur(sinceSeconds(live().current_session.started_at)) }}<br ng-if="live().current_session.id_tag"><span ng-if="live().current_session.id_tag">{{ ::'Tag' | translate }}: {{ tagName(live().current_session) }}</span></div>
+      <div class="jl-sub" ng-if="!live().current_session">{{ ::'Last seen' | translate }} {{ clock(live().last_seen_at) }}</div>
+    </div>
+    <div class="jl-card">
+      <div class="jl-label">{{ ::'Power' | translate }}</div>
+      <div class="jl-value jl-blue">{{ fix(live().power_kw, 1) }} kW</div>
+      <div class="jl-sub" ng-if="live().latest_meter_wh != null">{{ ::'Meter' | translate }} {{ live().latest_meter_wh / 1000 | number:1 }} kWh</div>
+    </div>
+    <div class="jl-card">
+      <div class="jl-label">{{ ::'This session' | translate }}</div>
+      <div class="jl-value">{{ fix(live().current_session ? live().current_session.kwh_so_far : 0, 1) }} kWh</div>
+      <div class="jl-sub" ng-if="live().current_session">ERE {{ fix(ereOf(live().current_session.kwh_so_far), 1) }} &middot; {{ ::'est.' | translate }} <span class="jl-green">{{ eur(live().current_session.estimated_euro) }}</span></div>
+      <div class="jl-sub" ng-if="!live().current_session">{{ ::'No active session' | translate }}</div>
+    </div>
+    <div class="jl-card" ng-if="estimate">
+      <div class="jl-label">{{ ::'ERE price' | translate }}</div>
+      <div class="jl-value jl-purple">&euro; {{ estimate.price_per_ere | number:3 }}</div>
+      <div class="jl-sub">{{ ::'per ERE, fee' | translate }} {{ estimate.effective_fee_pct }} % ({{ ::'indicative' | translate }})</div>
+    </div>
+  </div>
+
+  <div class="jl-tabs">
+    <button class="jl-tab" ng-class="{active: tab==='overview'}" ng-click="setTab('overview')">{{ ::'Overview' | translate }}</button>
+    <button class="jl-tab" ng-class="{active: tab==='sessions'}" ng-click="setTab('sessions')">{{ ::'Sessions' | translate }} <span class="jl-badge" title="{{ 'Number of charging sessions known to Joulo' | translate }}">{{ allSessions().length }}</span></button>
+    <button class="jl-tab" ng-class="{active: tab==='insights'}" ng-click="setTab('insights')">{{ ::'Insights' | translate }}</button>
+    <button class="jl-tab" ng-class="{active: tab==='ere'}" ng-click="setTab('ere')">{{ ::'ERE yield' | translate }} <span class="jl-badge warn" ng-if="ereWarnings()" title="{{ 'Joulo is holding back part of your ERE payout' | translate }}: {{ ere.blocked.reason }} ({{ eur(ere.blocked.forecast_net_eur) }}). {{ 'See the ERE yield tab' | translate }}">!</span></button>
+    <button class="jl-tab" ng-class="{active: tab==='setup'}" ng-click="setTab('setup')">{{ ::'Setup' | translate }} <span class="jl-badge warn" ng-if="openSteps()" title="{{ openSteps() }} {{ 'setup steps still open' | translate }}">{{ openSteps() }}</span></button>
+  </div>
+
+  <!-- Overview -->
+  <div ng-if="tab==='overview'">
+    <div class="jl-section">
+      <h3>{{ ::'Period' | translate }} <small>{{ range.label }}</small>
+        <span class="jl-seg">
+          <button class="jl-btn" ng-class="{active: period.mode===m}" ng-repeat="m in ['day','week','month','year']" ng-click="setMode(m)">{{ m | translate }}</button>
+          <button class="jl-btn" ng-click="shift(-1)" title="{{ 'Previous period' | translate }}">&lsaquo;</button>
+          <button class="jl-btn" ng-click="today()" title="{{ 'Go to the current period' | translate }}"><i class="fa fa-home"></i> {{ range.label }}</button>
+          <button class="jl-btn" ng-click="shift(1)" title="{{ 'Next period' | translate }}">&rsaquo;</button>
+        </span>
+      </h3>
+      <div class="jl-cards" style="margin-bottom:0;">
+        <div class="jl-card"><div class="jl-label">{{ ::'Charged' | translate }}</div><div class="jl-value">{{ totals.kwh | number:1 }} kWh</div><div class="jl-sub">{{ totals.count }} {{ ::'sessions' | translate }}<span ng-if="totals.count"> &middot; {{ ::'avg' | translate }} {{ totals.kwh / totals.count | number:1 }} kWh</span></div></div>
+        <div class="jl-card" ng-if="totals.hasCost"><div class="jl-label">{{ ::'Charging cost' | translate }}</div><div class="jl-value jl-orange">{{ eur(totals.cost) }}</div><div class="jl-sub">{{ ::'from your real charger device' | translate }}<br ng-if="totals.kwh">{{ ::'avg' | translate }} &euro; {{ totals.cost / (totals.kwh || 1) | number:3 }} / kWh</div></div>
+        <div class="jl-card"><div class="jl-label">{{ ::'ERE credits' | translate }}</div><div class="jl-value jl-purple">{{ totals.ere | number:1 }}</div><div class="jl-sub">0.505 &times; 0.6588 {{ ::'per kWh' | translate }}</div></div>
+        <div class="jl-card"><div class="jl-label">{{ ::'ERE yield' | translate }}</div><div class="jl-value jl-green">{{ eur(totals.yield) }}</div><div class="jl-sub">{{ ::'indicative, not paid out' | translate }}</div></div>
+        <div class="jl-card" ng-if="totals.hasCost"><div class="jl-label">{{ ::'Net charging cost' | translate }}</div><div class="jl-value">{{ eur(totals.cost - totals.yield) }}</div><div class="jl-sub">{{ ::'cost minus ERE yield' | translate }}<br ng-if="totals.kwh">&euro; {{ (totals.cost - totals.yield) / (totals.kwh || 1) | number:3 }} / kWh</div></div>
+      </div>
+      <div class="jl-warn" style="margin-top:8px;" ng-if="!hasRealDevice()">{{ ::'Pick your real charger kWh device in the Setup tab to see charging cost and net cost.' | translate }}</div>
+    </div>
+    <div class="jl-section">
+      <h3>{{ chartTitle() }} <small>{{ range.label }}</small></h3>
+      <div id="jl-chart" style="height:320px;"></div>
+      <div class="jl-empty" ng-if="!totals.count">{{ ::'No sessions in this period' | translate }}</div>
+    </div>
+  </div>
+
+  <!-- Sessions -->
+  <div ng-if="tab==='sessions'">
+    <div class="jl-section">
+      <h3>{{ ::'Sessions' | translate }} <small>{{ ::'newest first' | translate }}</small></h3>
+      <table class="jl-t">
+        <thead><tr><th>{{ ::'Date' | translate }}</th><th>{{ ::'Start - End' | translate }}</th><th class="n">{{ ::'Duration' | translate }}</th><th class="n">kWh</th><th class="n" ng-if="hasRealDevice()">{{ ::'Cost' | translate }}</th><th class="n" title="ERE = Emissiereductie-eenheid, the credit Joulo sells for your charged kWh">ERE &#9432;</th><th class="n">ERE &euro;</th><th class="n" ng-if="hasRealDevice()" title="Charging cost minus ERE yield">{{ ::'Net cost' | translate }}</th><th>{{ ::'Status' | translate }}</th></tr></thead>
+        <tbody>
+          <tr ng-repeat="s in sessionRows | limitTo: rowLimit">
+            <td>{{ s.dayLabel }}</td><td>{{ s.startClock }} &ndash; {{ s.endClock || '...' }}</td><td class="n">{{ dur(s.seconds) }}</td><td class="n">{{ s.kwh | number:1 }}</td>
+            <td class="n" ng-if="hasRealDevice()" title="{{ s.approx ? ('Several sessions on this day: the day cost of the real charger device is split by kWh, so this is an estimate' | translate) : '' }}"><span ng-if="s.cost != null">{{ s.approx ? '~ ' : '' }}{{ eur(s.cost) }}</span><span ng-if="s.cost == null">-</span></td>
+            <td class="n">{{ s.ere | number:1 }}</td><td class="n jl-green">{{ eur(s.yield) }}</td>
+            <td class="n" ng-if="hasRealDevice()"><b ng-if="s.cost != null">{{ s.approx ? '~ ' : '' }}{{ eur(s.cost - s.yield) }}</b></td>
+            <td><span class="jl-pill" ng-class="s.active ? 'live' : 'done'">{{ s.active ? ('charging' | translate) : ('completed' | translate) }}</span></td>
+          </tr>
+          <tr ng-if="!sessionRows.length"><td colspan="9" class="jl-empty">{{ ::'No sessions yet. Data is still being added by Joulo.' | translate }}</td></tr>
+        </tbody>
+      </table>
+      <div style="text-align:center;margin-top:8px;" ng-if="sessionRows.length > rowLimit"><button class="jl-btn" ng-click="rowLimit = rowLimit + 30">{{ ::'Show more' | translate }}</button></div>
+      <p class="jl-help" ng-if="hasRealDevice()">{{ ::'Cost per session comes from the real charger device day cost: exact when the day has one session, split by kWh and marked with ~ when it has several.' | translate }}</p>
+    </div>
+  </div>
+
+  <!-- Insights -->
+  <div ng-if="tab==='insights'">
+    <div class="jl-section">
+      <h3>{{ ::'Insights' | translate }}
+        <span class="jl-seg">
+          <button class="jl-btn" ng-class="{active: insightWindow===w.key}" ng-repeat="w in insightWindows" ng-click="setInsightWindow(w.key)">{{ w.label | translate }}</button>
+        </span>
+      </h3>
+      <div class="jl-empty" ng-if="insights.count < 3">{{ (insightWindow === 'all' ? 'Insights appear after a few sessions. Joulo is still adding your data.' : 'Not enough sessions in this period, pick a longer one.') | translate }}</div>
+      <div ng-if="insights.count >= 3">
+        <div class="jl-cards" style="margin-bottom:8px;">
+          <div class="jl-card"><div class="jl-label">{{ ::'Average session' | translate }}</div><div class="jl-value">{{ insights.avgKwh | number:1 }} kWh</div><div class="jl-sub">{{ ::'longest' | translate }} {{ dur(insights.longest) }}</div></div>
+          <div class="jl-card"><div class="jl-label">{{ ::'Peak session power' | translate }}</div><div class="jl-value jl-blue">{{ insights.peakKw | number:1 }} kW</div><div class="jl-sub">{{ ::'average over session time' | translate }} {{ insights.avgKw | number:1 }} kW</div></div>
+          <div class="jl-card"><div class="jl-label">{{ ::'Best day' | translate }}</div><div class="jl-value">{{ insights.bestDayLabel }}</div><div class="jl-sub">{{ insights.bestDayKwh | number:1 }} kWh</div></div>
+          <div class="jl-card"><div class="jl-label">{{ ::'ERE value per kWh' | translate }}</div><div class="jl-value jl-green">&euro; {{ insights.yieldPerKwh | number:3 }}</div><div class="jl-sub" ng-if="insights.costPerKwh != null">{{ ::'vs cost' | translate }} &euro; {{ insights.costPerKwh | number:3 }} / kWh<br>{{ ::'covers' | translate }} {{ insights.coverage | number:0 }} % {{ ::'of the cost' | translate }}</div></div>
+        </div>
+        <div class="jl-label" style="margin-bottom:4px;">{{ ::'kWh per weekday' | translate }}</div>
+        <div id="jl-chart-wd" style="height:240px;"></div>
+        <p class="jl-help">{{ ::'Hover a bar: kWh, charging cost, ERE yield and the net charging cost for that weekday.' | translate }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ERE -->
+  <div ng-if="tab==='ere'">
+    <div class="jl-section">
+      <h3>{{ ::'ERE position' | translate }} <small ng-if="ere">{{ ::'compliance year' | translate }} {{ ere.compliance_year }}</small></h3>
+      <div class="jl-empty" ng-if="!ere">{{ ::'Waiting for the ERE position from Joulo.' | translate }}</div>
+      <div ng-if="ere">
+        <table class="jl-kv">
+          <tr><td>{{ ::'Paid out' | translate }}</td><td>{{ eur(ere.paid.net_eur) }}</td></tr>
+          <tr><td>{{ ::'Payable' | translate }}</td><td>{{ eur(ere.payable.net_eur) }}</td></tr>
+          <tr><td>{{ ::'Reserved' | translate }}</td><td>{{ eur(ere.reserved.net_eur) }}</td></tr>
+          <tr ng-if="ere.blocked && ere.blocked.reason"><td>{{ ::'Blocked' | translate }} ({{ ere.blocked.reason }})</td><td class="jl-orange">{{ eur(ere.blocked.forecast_net_eur) }}</td></tr>
+          <tr><td>{{ ::'Unsold forecast, year to date' | translate }}</td><td class="jl-green">{{ eur(ere.unsold.ytd_forecast_net_eur) }}</td></tr>
+          <tr><td>{{ ::'Expected total' | translate }} {{ ere.compliance_year }}</td><td class="jl-green">{{ eur(ere.total_expected_eur) }}</td></tr>
+        </table>
+        <table class="jl-t" style="margin-top:10px;" ng-if="ere.quarters.length">
+          <tr><th>{{ ::'Quarter' | translate }}</th><th class="n">ERE</th><th class="n">{{ ::'Sold' | translate }}</th><th class="n">{{ ::'Price' | translate }}</th></tr>
+          <tr ng-repeat="q in ere.quarters"><td>{{ q.quarter }}</td><td class="n">{{ q.ere | number:1 }}</td><td class="n">{{ q.sold_ere | number:1 }}</td><td class="n">{{ q.price_per_ere ? ('€ ' + fix(q.price_per_ere, 3)) : '-' }}</td></tr>
+        </table>
+        <p class="jl-help">{{ ::'Realised prices settle per quarter; the euro values above are forecasts until Joulo sells the batch.' | translate }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Setup -->
+  <div ng-if="tab==='setup'">
+    <div class="jl-section" style="border:1px solid rgba(67,164,211,0.4);">
+      <h3>{{ ::'Setup' | translate }} <small>{{ stepsDone() }} / 4 {{ ::'steps done' | translate }}</small></h3>
+      <table class="jl-t">
+        <tr class="jl-step"><td ng-class="setup.connected ? 'jl-green' : 'jl-orange'">{{ setup.connected ? '✓' : '1' }}</td><td><b>{{ ::'Connected to Joulo' | translate }}</b><div class="jl-sub">{{ setup.connected ? ('Token accepted' | translate) : (setup.token_set ? (error || ('Connecting...' | translate)) : ('Paste your API token in the Joulo hardware settings (Developer, API in the Joulo dashboard)' | translate)) }}</div></td><td></td></tr>
+        <tr class="jl-step"><td ng-class="chargers.length ? 'jl-green' : 'jl-orange'">{{ chargers.length ? '✓' : '2' }}</td><td><b>{{ ::'Charger found' | translate }}<span ng-repeat="c in chargers">: {{c.nickname}} ({{c.brand}} {{c.model}})</span></b><div class="jl-sub" ng-repeat="c in chargers">{{ c.nickname }}: {{ c.mid_eligible ? ('MID eligible, sessions count for ERE' | translate) : ('Not MID eligible, no ERE yield' | translate) }} <a ng-if="c.help_url" ng-href="{{c.help_url}}" target="_blank">{{ ::'more info' | translate }}</a></div></td><td></td></tr>
+        <tr class="jl-step"><td ng-class="allRealSet() ? 'jl-green' : 'jl-orange'">{{ allRealSet() ? '✓' : '3' }}</td><td><b>{{ ::'Pick your real charger kWh device' | translate }}</b><div class="jl-sub">{{ ::'Used for the cost figures' | translate }}</div>
+          <div ng-repeat="c in chargers" style="margin-top:4px;"><span class="jl-sub" ng-if="chargers.length > 1">{{c.nickname}}: </span>
+            <select class="jl-select" ng-model="realSel[c.id]" ng-change="setReal(c)" ng-options="d.idx as d.Name for d in energyDevices"><option value="">{{ ::'Select a device...' | translate }}</option></select></div></td><td></td></tr>
+        <tr class="jl-step"><td ng-class="setup.import_done ? 'jl-green' : 'jl-orange'">{{ setup.import_done ? '✓' : '4' }}</td><td><b>{{ ::'Import history' | translate }}</b>
+          <div class="jl-sub">{{ allSessions().length }} {{ ::'sessions known' | translate }}<span ng-if="firstDay()">, {{ firstDay() }} {{ ::'to' | translate }} {{ lastDay() }}</span>. {{ ::'Existing days are overwritten, safe to repeat.' | translate }}</div>
+          <div class="jl-bar" style="max-width:320px"><i ng-style="{width: importPct() + '%'}"></i></div>
+          <div class="jl-sub" ng-if="setup.import_running">{{ ::'Importing' | translate }}: {{ setup.import_sessions }} {{ ::'sessions fetched' | translate }}</div>
+          <div class="jl-sub" ng-if="setup.writes_pending">{{ ::'Writing history rows' | translate }}: {{ setup.writes_pending }} {{ ::'left' | translate }}</div></td>
+          <td class="n"><button class="jl-btn active" ng-click="reimport()" ng-disabled="setup.import_running">{{ setup.import_done ? ('Import again' | translate) : ('Import now' | translate) }}</button></td></tr>
+      </table>
+    </div>
+    <div class="jl-section">
+      <h3>{{ ::'Settings' | translate }} <small>{{ ::'stored by the plugin' | translate }}</small></h3>
+      <table class="jl-kv">
+        <tr ng-repeat="c in chargers"><td>{{ ::'Real charger kWh device' | translate }}<span ng-if="chargers.length > 1"> ({{c.nickname}})</span></td><td>{{ deviceName(c.real_idx) }}</td></tr>
+        <tr><td>{{ ::'Allow control / restart' | translate }}</td><td>{{ settings.allow_control ? ('on' | translate) : ('off' | translate) }} / {{ settings.allow_restart ? ('on' | translate) : ('off' | translate) }}</td></tr>
+        <tr><td>{{ ::'Plugin version' | translate }}</td><td>{{ version }}</td></tr>
+      </table>
+      <p class="jl-help">{{ ::'Token and advanced options stay on the Hardware page.' | translate }}</p>
+      <p style="margin-top:8px;"><button class="jl-btn" ng-click="createDashboard()">{{ ::'Create a Dynamic Dashboard' | translate }}</button></p>
+      <p class="jl-help">{{ ::'Optional. Builds a ready-made Dynamic Dashboard named "Joulo" from your Joulo devices: per charger the power, energy, ERE yield and ERE credits, charts of the charged energy and ERE yield per day and per month, and your ERE position. Open it under Dashboard Dynamic (enable Dashboard Dynamic in the settings first). Pressing the button again adds another copy, remove extra ones in the dashboard layout list.' | translate }}</p>
+    </div>
+  </div>
+
+  <div class="jl-foot">Joulo plugin {{version}} &middot; {{ ::'data from api.joulo.nl' | translate }}<span ng-if="firstDay()"> &middot; {{ ::'sessions' | translate }} {{ firstDay() }} - {{ lastDay() }}</span></div>
+  </div>
+
+  <div class="jl-toast" ng-class="{err: toast.err}" ng-if="toast.text">{{ toast.text }}</div>
+</div>
+
+<script>
+var app = angular.module(['jouloApp'], []);
+app.controller('jouloCtrl', function ($scope, $http, $timeout, $element, livesocket) {
+
+  var KEY = 'Joulo';
+  var snaps = {};       // hwid -> snapshot
+  var charts = {};
+  var costCache = {};   // idx -> { year -> {day: cost} }
+  var costLoading = {};
+  var DAY = 86400000;
+
+  $scope.loaded = false;
+  $scope.tab = null;
+  $scope.chargers = []; $scope.sessions = []; $scope.ere = null; $scope.energy = null; $scope.estimate = null;
+  $scope.settings = {}; $scope.setup = {}; $scope.error = ''; $scope.version = '';
+  $scope.sel = { charger: 'all' };
+  $scope.period = { mode: 'month', anchor: new Date() };
+  $scope.range = { from: '', to: '', label: '' };
+  $scope.totals = { kwh: 0, count: 0, ere: 0, yield: 0, cost: 0, hasCost: false };
+  $scope.insights = { count: 0 };
+  $scope.insightWindows = [{ key: '7', label: 'Week' }, { key: '30', label: 'Month' }, { key: '90', label: '3 months' }, { key: '365', label: 'Year' }, { key: 'all', label: 'All' }];
+  $scope.insightWindow = '90';
+  $scope.setInsightWindow = function (k) { $scope.insightWindow = k; $scope.viewChanged(); };
+  $scope.sessionRows = []; $scope.rowLimit = 30;
+  $scope.energyDevices = []; $scope.realSel = {};
+  $scope.toast = {};
+
+  function p2(n) { return n < 10 ? '0' + n : '' + n; }
+  function fmt(d) { return d.getFullYear() + '-' + p2(d.getMonth() + 1) + '-' + p2(d.getDate()); }
+  function parseDay(s) { var a = s.split('-'); return new Date(+a[0], +a[1] - 1, +a[2]); }
+  function dayOf(iso) { return fmt(new Date(iso)); }
+  // resolve a (possibly var() based) custom property to a concrete color Highcharts understands
+  function cssColor(name, fallback) {
+    var host = $element[0].querySelector('.jl-page') || $element[0];
+    var probe = document.createElement('span');
+    probe.style.color = 'var(' + name + ')';
+    host.appendChild(probe);
+    var v = getComputedStyle(probe).color;
+    host.removeChild(probe);
+    return v || fallback;
+  }
+
+  var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  var WD = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  function dayLabel(d) { return WD[(d.getDay() + 6) % 7] + ' ' + d.getDate() + ' ' + MONTHS[d.getMonth()]; }
+
+  $scope.fix = function (v, d) { return (Number(v) || 0).toFixed(d); };
+  $scope.eur = function (v) {
+    if (v == null || isNaN(v)) { return '-'; }
+    return '€ ' + Number(v).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
+  $scope.dur = function (sec) {
+    if (!sec) { return '-'; }
+    var h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60);
+    return h ? h + ' h ' + p2(m) + ' min' : m + ' min';
+  };
+  $scope.clock = function (iso) { if (!iso) { return ''; } var d = new Date(iso); return p2(d.getHours()) + ':' + p2(d.getMinutes()); };
+  $scope.sinceSeconds = function (iso) { return Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000); };
+  $scope.ereOf = function (kwh) { return (kwh || 0) * 0.505 * 0.6588; };
+  $scope.tagName = function (cs) {
+    var s = ($scope.sessions || []).filter(function (x) { return x.id === cs.id; })[0];
+    return (s && (s.id_tag_label || s.id_tag)) || cs.id_tag;
+  };
+
+  function toast(text, err) {
+    $scope.toast = { text: text, err: !!err };
+    $timeout(function () { if ($scope.toast.text === text) { $scope.toast = {}; } }, 4000);
+  }
+
+  // ---------------------------------------------------------------- plugin channel
+  function send(cmd, extra, hwid) {
+    var msg = angular.extend({ cmd: cmd }, extra || {});
+    var id = (hwid === undefined || hwid === null) ? undefined : parseInt(hwid, 10);
+    livesocket.sendPluginCommand(KEY, msg, id);
+  }
+
+  function merge() {
+    var chargers = [], sessions = [], keys = Object.keys(snaps);
+    var ere = null, energy = null, estimate = null, settings = {}, setup = {}, error = '', version = '';
+    var sumKeys = ['import_sessions', 'writes_pending'];
+    keys.forEach(function (hw) {
+      var s = snaps[hw];
+      (s.chargers || []).forEach(function (c) { c._hwid = hw; chargers.push(c); });
+      sessions = sessions.concat(s.sessions || []);
+      ere = ere || s.ere; energy = energy || s.energy; estimate = estimate || s.estimate;
+      settings.allow_control = settings.allow_control || (s.settings && s.settings.allow_control);
+      settings.allow_restart = settings.allow_restart || (s.settings && s.settings.allow_restart);
+      var st = s.setup || {};
+      ['token_set', 'connected', 'import_done', 'import_running'].forEach(function (k) {
+        setup[k] = (hw === keys[0]) ? !!st[k] : (k === 'import_running' ? (setup[k] || !!st[k]) : (setup[k] && !!st[k]));
+      });
+      sumKeys.forEach(function (k) { setup[k] = (setup[k] || 0) + (st[k] || 0); });
+      error = error || s.error; version = s.version || version;
+    });
+    $scope.chargers = chargers; $scope.sessions = sessions; $scope.ere = ere; $scope.energy = energy; $scope.estimate = estimate;
+    $scope.settings = settings; $scope.setup = setup; $scope.error = error; $scope.version = version;
+    chargers.forEach(function (c) { if ($scope.realSel[c.id] === undefined || c.real_idx) { $scope.realSel[c.id] = c.real_idx || null; } });
+    if (chargers.length < 2) { $scope.sel.charger = 'all'; }
+    $scope.loaded = keys.length > 0;
+    if ($scope.tab === null && $scope.loaded) {
+      $scope.tab = ($scope.openSteps() ? 'setup' : 'overview');
+      // open on the latest month that has data when the current month is still empty
+      var latest = sessions[0] && new Date(sessions[0].started_at);
+      var now = new Date();
+      if (latest && (latest.getFullYear() !== now.getFullYear() || latest.getMonth() !== now.getMonth())) { $scope.period.anchor = latest; }
+    }
+  }
+
+  var off = livesocket.onPluginMessage(KEY, function (msg) {
+    var d = msg.data;
+    if (typeof d === 'string') { try { d = JSON.parse(d); } catch (e) { return; } }
+    if (!d || !d.type) { return; }
+    var hw = String(msg.hwid != null ? msg.hwid : d.hwid);
+    $scope.$evalAsync(function () {
+      if (d.type === 'snapshot') { snaps[hw] = d; merge(); $scope.viewChanged(); }
+      else if (d.type === 'import_progress') { if (snaps[hw]) { snaps[hw].setup = angular.extend(snaps[hw].setup || {}, { import_running: true, import_sessions: d.sessions }); merge(); } }
+      else if (d.type === 'restart_result') { toast(d.ok ? 'Restart sent to the charger' : ('Restart failed: ' + (d.error || '')), !d.ok); }
+      else if (d.type === 'error') { toast(d.error, true); }
+    });
+  });
+  livesocket.subscribePlugin(KEY);
+  send('snapshot');
+  var retry = $timeout(function again() { if (!$scope.loaded) { send('snapshot'); retry = $timeout(again, 4000); } }, 2500);
+
+  // ---------------------------------------------------------------- selection helpers
+  $scope.selectedCharger = function () {
+    return $scope.chargers.filter(function (c) { return c.id === $scope.sel.charger; })[0] || ($scope.chargers.length === 1 ? $scope.chargers[0] : null);
+  };
+  $scope.live = function () {
+    var c = $scope.selectedCharger();
+    if (c) { return c; }
+    var charging = $scope.chargers.filter(function (x) { return x.is_charging; })[0];
+    return charging || $scope.chargers[0];
+  };
+  $scope.allSessions = function () {
+    var id = $scope.sel.charger;
+    return $scope.sessions.filter(function (s) { return id === 'all' || s.charger_id === id; });
+  };
+  $scope.headStatus = function () {
+    var c = $scope.live();
+    return c ? (c.connection_status || '') + (c.last_seen_at ? ' · ' + $scope.clock(c.last_seen_at) : '') : '';
+  };
+  $scope.firstDay = function () { var a = $scope.sessions; return a.length ? dayOf(a[a.length - 1].started_at) : ''; };
+  $scope.lastDay = function () { var a = $scope.sessions; return a.length ? dayOf(a[0].started_at) : ''; };
+
+  function realIdxList() {
+    var id = $scope.sel.charger, out = [];
+    $scope.chargers.forEach(function (c) { if ((id === 'all' || c.id === id) && c.real_idx && out.indexOf(c.real_idx) < 0) { out.push(c.real_idx); } });
+    return out;
+  }
+  $scope.hasRealDevice = function () { return realIdxList().length > 0; };
+  $scope.allRealSet = function () { return $scope.chargers.length > 0 && $scope.chargers.every(function (c) { return !!c.real_idx; }); };
+
+  $scope.problems = function () {
+    var out = [];
+    if ($scope.error) { out.push($scope.error); }
+    if ($scope.ere && $scope.ere.blocked && $scope.ere.blocked.reason) {
+      out.push('ERE is blocked: ' + $scope.ere.blocked.reason + ' (' + $scope.eur($scope.ere.blocked.forecast_net_eur) + ').');
+    }
+    $scope.chargers.forEach(function (c) { if (c.connection_status && c.connection_status !== 'online') { out.push(c.nickname + ' is ' + c.connection_status + '.'); } });
+    return out;
+  };
+  $scope.ereWarnings = function () { return ($scope.ere && $scope.ere.blocked && $scope.ere.blocked.reason) ? 1 : 0; };
+  $scope.stepsDone = function () {
+    return ($scope.setup.connected ? 1 : 0) + ($scope.chargers.length ? 1 : 0) + ($scope.allRealSet() ? 1 : 0) + ($scope.setup.import_done ? 1 : 0);
+  };
+  $scope.openSteps = function () { return 4 - $scope.stepsDone(); };
+  $scope.importPct = function () {
+    if ($scope.setup.import_done && !$scope.setup.writes_pending) { return 100; }
+    if ($scope.setup.import_running) { return Math.min(90, 10 + ($scope.setup.import_sessions || 0) / 5); }
+    return $scope.setup.import_done ? 95 : 0;
+  };
+  $scope.deviceName = function (idx) {
+    if (!idx) { return '-'; }
+    var d = $scope.energyDevices.filter(function (x) { return x.idx === idx; })[0];
+    return d ? d.Name + ' (idx ' + idx + ')' : 'idx ' + idx;
+  };
+
+  // ---------------------------------------------------------------- commands
+  $scope.refresh = function () { $scope.chargers.forEach(function (c) { send('refresh', {}, c._hwid); }); $timeout(function () { send('snapshot'); }, 1500); toast('Refreshing'); };
+  $scope.reimport = function () {
+    if ($scope.setup.import_done && !confirm('Import all sessions again? Existing days are overwritten.')) { return; }
+    var seen = {};
+    $scope.chargers.forEach(function (c) { if (!seen[c._hwid]) { seen[c._hwid] = 1; send('import', {}, c._hwid); } });
+    toast('Import started');
+  };
+  $scope.restart = function (c) {
+    if (c && confirm('Restart charger ' + c.nickname + '? An active session may be interrupted.')) { send('restart', { charger_id: c.id }, c._hwid); }
+  };
+  $scope.setReal = function (c) { send('setRealDevice', { charger_id: c.id, idx: $scope.realSel[c.id] || 0 }, c._hwid); toast('Saved'); };
+  $scope.setTab = function (t) { $scope.tab = t; $scope.viewChanged(); };
+
+  // ---------------------------------------------------------------- ready-made Dynamic Dashboard
+  function uuid() {
+    if (window.crypto && crypto.randomUUID) { return crypto.randomUUID(); }
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) { var r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 3 | 8)).toString(16); });
+  }
+  $scope.createDashboard = function () {
+    $http.get('json.htm?type=command&param=getdevices&filter=all&used=true&order=Name').then(function (r) {
+      var idxByName = {};
+      ((r.data && r.data.result) || []).forEach(function (d) { idxByName[d.Name] = String(d.idx); });
+      var widgets = [], y = 0;
+      function add(type, x, w, h, config) { widgets.push({ id: uuid(), type: type, x: x, y: y, w: w, h: h, config: config }); }
+      function stat(name, x, label) { if (idxByName[name]) { add('stat-counter', x, 3, 2, { deviceIdx: idxByName[name], label: label, showBackground: true }); return true; } return false; }
+      $scope.chargers.forEach(function (c) {
+        add('text-note', 0, 12, 1, { content: 'Joulo ' + c.nickname, fontSize: 16, textAlign: 'left' }); y += 1;
+        stat(c.nickname + ' power', 0, 'Power'); stat(c.nickname + ' energy', 3, 'Energy'); stat(c.nickname + ' ERE yield', 6, 'ERE yield'); stat(c.nickname + ' ERE credits', 9, 'ERE credits'); y += 2;
+        if (idxByName[c.nickname + ' energy']) { add('energy-chart', 0, 6, 5, { deviceIdx: idxByName[c.nickname + ' energy'], chartType: 'month', title: 'Charged per day' }); }
+        if (idxByName[c.nickname + ' ERE yield']) { add('energy-chart', 6, 6, 5, { deviceIdx: idxByName[c.nickname + ' ERE yield'], chartType: 'month', title: 'ERE yield per day' }); }
+        y += 5;
+        if (idxByName[c.nickname + ' energy']) { add('energy-chart', 0, 6, 5, { deviceIdx: idxByName[c.nickname + ' energy'], chartType: 'year', title: 'Charged per month' }); }
+        if (idxByName[c.nickname + ' ERE yield']) { add('energy-chart', 6, 6, 5, { deviceIdx: idxByName[c.nickname + ' ERE yield'], chartType: 'year', title: 'ERE yield per month' }); }
+        y += 5;
+      });
+      add('text-note', 0, 12, 1, { content: 'Joulo ERE position', fontSize: 16, textAlign: 'left' }); y += 1;
+      stat('Joulo ERE paid', 0, 'Paid'); stat('Joulo ERE payable', 3, 'Payable'); stat('Joulo ERE unsold forecast', 6, 'Unsold forecast'); stat('Joulo ERE expected this year', 9, 'Expected this year');
+      var body = 'id=' + encodeURIComponent(uuid()) + '&name=' + encodeURIComponent('Joulo') + '&isDefault=false&layout=' +
+        encodeURIComponent(JSON.stringify({ version: 1, columns: 12, rowHeight: 60, margin: 8, animate: true, widgets: widgets }));
+      $http({ method: 'POST', url: 'json.htm?type=command&param=savedashboardlayout', data: body, headers: { 'Content-Type': 'application/x-www-form-urlencoded' } })
+        .then(function (resp) { toast(resp.data && resp.data.status === 'OK' ? 'Dashboard "Joulo" created, open it in Dashboard Dynamic' : 'Could not create the dashboard', !(resp.data && resp.data.status === 'OK')); },
+          function () { toast('Could not create the dashboard', true); });
+    });
+  };
+
+  // ---------------------------------------------------------------- real charger device (cost per day)
+  function loadDevices() {
+    $http.get('json.htm?type=command&param=getdevices&filter=all&used=true&order=Name').then(function (r) {
+      var list = (r.data && r.data.result) || [];
+      $scope.energyDevices = list.filter(function (d) {
+        return d.SubType === 'kWh' || d.SubType === 'Managed Counter' || d.Type === 'P1 Smart Meter' || d.Type === 'Energy' || d.CounterToday !== undefined;
+      }).map(function (d) { return { idx: parseInt(d.idx, 10), Name: d.Name }; });
+    });
+  }
+  loadDevices();
+
+  function loadCostYear(idx, year) {
+    costCache[idx] = costCache[idx] || {};
+    var k = idx + ':' + year;
+    if (costCache[idx][year] || costLoading[k]) { return; }
+    costLoading[k] = true;
+    $http.get('json.htm?type=command&param=graph&sensor=counter&idx=' + idx + '&range=year&actyear=' + year).then(function (r) {
+      var map = {};
+      ((r.data && r.data.result) || []).forEach(function (row) {
+        if (row.d) { map[row.d.substring(0, 10)] = { cost: parseFloat(row.p) || 0, kwh: parseFloat(row.v) || 0 }; }
+      });
+      costCache[idx][year] = map;
+      delete costLoading[k];
+      $scope.viewChanged();
+    }, function () { costCache[idx][year] = {}; delete costLoading[k]; });
+  }
+  function dayCost(day) {
+    var idxs = realIdxList();
+    if (!idxs.length) { return null; }
+    var sum = 0, any = false, year = +day.substring(0, 4);
+    idxs.forEach(function (idx) {
+      var m = costCache[idx] && costCache[idx][year];
+      if (m === undefined) { loadCostYear(idx, year); return; }
+      any = true;
+      if (m[day]) { sum += m[day].cost; }
+    });
+    return any ? sum : null;
+  }
+
+  // ---------------------------------------------------------------- periods
+  function mondayOf(d) { var x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x; }
+  function computeRange() {
+    var a = $scope.period.anchor, m = $scope.period.mode, from, to, label;
+    if (m === 'day') { from = to = new Date(a.getFullYear(), a.getMonth(), a.getDate()); label = dayLabel(from) + ' ' + from.getFullYear(); }
+    else if (m === 'week') { from = mondayOf(a); to = new Date(from.getFullYear(), from.getMonth(), from.getDate() + 6); label = dayLabel(from) + ' - ' + dayLabel(to); }
+    else if (m === 'month') { from = new Date(a.getFullYear(), a.getMonth(), 1); to = new Date(a.getFullYear(), a.getMonth() + 1, 0); label = MONTHS[a.getMonth()] + ' ' + a.getFullYear(); }
+    else { from = new Date(a.getFullYear(), 0, 1); to = new Date(a.getFullYear(), 11, 31); label = '' + a.getFullYear(); }
+    $scope.range = { from: fmt(from), to: fmt(to), label: label };
+  }
+  $scope.setMode = function (m) { $scope.period.mode = m; $scope.viewChanged(); };
+  $scope.shift = function (n) {
+    var a = $scope.period.anchor, m = $scope.period.mode;
+    if (m === 'day') { a = new Date(a.getFullYear(), a.getMonth(), a.getDate() + n); }
+    else if (m === 'week') { a = new Date(a.getFullYear(), a.getMonth(), a.getDate() + 7 * n); }
+    else if (m === 'month') { a = new Date(a.getFullYear(), a.getMonth() + n, 1); }
+    else { a = new Date(a.getFullYear() + n, 0, 1); }
+    $scope.period.anchor = a; $scope.viewChanged();
+  };
+  $scope.today = function () { $scope.period.anchor = new Date(); $scope.viewChanged(); };
+  $scope.chartTitle = function () {
+    return { day: 'Charged per session', week: 'Charged per day', month: 'Charged per day', year: 'Charged per month' }[$scope.period.mode];
+  };
+
+  // ---------------------------------------------------------------- derived data
+  function sessionList() {
+    var rows = $scope.allSessions().map(function (s) {
+      var start = new Date(s.started_at), end = s.ended_at ? new Date(s.ended_at) : null;
+      return { raw: s, day: fmt(start), dayLabel: dayLabel(start), startClock: $scope.clock(s.started_at), endClock: end ? $scope.clock(s.ended_at) : '',
+        seconds: Math.max(0, ((end || new Date()) - start) / 1000), kwh: s.kwh || 0, ere: s.ere_credits || 0, yield: s.estimated_euro || 0,
+        active: s.status === 'active' || s.status === 'charging', start: start };
+    });
+    var perDay = {};
+    rows.forEach(function (r) { var p = perDay[r.day] = perDay[r.day] || { kwh: 0, n: 0 }; p.kwh += r.kwh; p.n++; });
+    rows.forEach(function (r) {
+      var c = dayCost(r.day), p = perDay[r.day];
+      r.cost = (c == null) ? null : (p.n > 1 ? (p.kwh ? c * r.kwh / p.kwh : 0) : c);
+      r.approx = p.n > 1;
+    });
+    return rows;
+  }
+
+  function build() {
+    computeRange();
+    var rows = sessionList();
+    $scope.sessionRows = rows;
+    var from = $scope.range.from, to = $scope.range.to;
+    var inRange = rows.filter(function (r) { return r.day >= from && r.day <= to; });
+    var t = { kwh: 0, count: inRange.length, ere: 0, yield: 0, cost: 0, hasCost: $scope.hasRealDevice() };
+    inRange.forEach(function (r) { t.kwh += r.kwh; t.ere += r.ere; t.yield += r.yield; });
+    // cost over every day of the period (the real device also counts days Joulo has no session for)
+    if (t.hasCost) {
+      var d = parseDay(from), end = parseDay(to), n = 0;
+      while (d <= end && n++ < 400) { t.cost += dayCost(fmt(d)) || 0; d = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1); }
+    }
+    $scope.totals = t;
+    insights(rows);
+  }
+
+  function insights(rows) {
+    var cutoff = $scope.insightWindow === 'all' ? '' : fmt(new Date(Date.now() - (+$scope.insightWindow) * DAY));
+    var r90 = rows.filter(function (r) { return r.day >= cutoff; });
+    var i = { count: r90.length, avgKwh: 0, longest: 0, peakKw: 0, avgKw: 0, bestDayKwh: 0, bestDayLabel: '-', yieldPerKwh: 0, costPerKwh: null, coverage: 0, wd: [] };
+    var days = {}, kwh = 0, yld = 0, kwSum = 0, kwN = 0;
+    for (var w = 0; w < 7; w++) { i.wd.push({ kwh: 0, yield: 0, cost: 0, days: {} }); }
+    r90.forEach(function (r) {
+      kwh += r.kwh; yld += r.yield;
+      i.longest = Math.max(i.longest, r.seconds);
+      if (r.seconds > 900 && r.kwh > 0) { var kw = r.kwh / (r.seconds / 3600); i.peakKw = Math.max(i.peakKw, kw); kwSum += kw; kwN++; }
+      days[r.day] = (days[r.day] || 0) + r.kwh;
+      var wd = (r.start.getDay() + 6) % 7;
+      i.wd[wd].kwh += r.kwh; i.wd[wd].yield += r.yield; i.wd[wd].days[r.day] = 1;
+    });
+    i.avgKwh = i.count ? kwh / i.count : 0; i.avgKw = kwN ? kwSum / kwN : 0;
+    Object.keys(days).forEach(function (d) { if (days[d] > i.bestDayKwh) { i.bestDayKwh = days[d]; i.bestDayLabel = dayLabel(parseDay(d)); } });
+    i.yieldPerKwh = kwh ? yld / kwh : 0;
+    if ($scope.hasRealDevice()) {
+      var cost = 0, known = true;
+      i.wd.forEach(function (w) { Object.keys(w.days).forEach(function (d) { var c = dayCost(d); if (c == null) { known = false; } else { w.cost += c; cost += c; } }); });
+      if (known && kwh) { i.costPerKwh = cost / kwh; i.coverage = cost ? yld / cost * 100 : 0; }
+    }
+    $scope.insights = i;
+  }
+
+  // ---------------------------------------------------------------- charts
+  function destroy(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
+  function axisStyle() { return { color: cssColor('--jl-muted', '#9ab'), fontSize: '11px' }; }
+
+  function drawMain() {
+    destroy('main');
+    var el = document.getElementById('jl-chart');
+    if (!el || typeof Highcharts === 'undefined') { return; }
+    var TXT = cssColor('--jl-text', '#e0e0e0'), GRID = 'rgba(128,128,128,0.2)', BLUE = '#2f8cff', GREEN = '#66bb6a', ORANGE = '#ffb366';
+    var rows = $scope.sessionRows, from = $scope.range.from, to = $scope.range.to, m = $scope.period.mode;
+    var cats = [], kwh = [], ere = [], cost = [], net = [], hasCost = $scope.totals.hasCost;
+    function push(label, k, e, c) {
+      cats.push(label); kwh.push(+k.toFixed(2)); ere.push(+e.toFixed(2));
+      cost.push(c == null ? null : +c.toFixed(2)); net.push(c == null || !k ? null : +(c - e).toFixed(2));
+    }
+    var inRange = rows.filter(function (r) { return r.day >= from && r.day <= to; });
+    if (m === 'day') {
+      inRange.slice().reverse().forEach(function (r) { push(r.startClock, r.kwh, r.yield, r.cost); });
+    } else if (m === 'year') {
+      for (var mo = 0; mo < 12; mo++) {
+        var pre = from.substring(0, 4) + '-' + p2(mo + 1), k = 0, e = 0, c = 0, any = false;
+        inRange.forEach(function (r) { if (r.day.substring(0, 7) === pre) { k += r.kwh; e += r.yield; } });
+        if (hasCost) { var dd = new Date(+from.substring(0, 4), mo + 1, 0).getDate(); for (var x = 1; x <= dd; x++) { var cc = dayCost(pre + '-' + p2(x)); if (cc != null) { c += cc; any = true; } } }
+        push(MONTHS[mo], k, e, hasCost && any ? c : null);
+      }
+    } else {
+      var d = parseDay(from), end = parseDay(to);
+      while (d <= end) {
+        var key = fmt(d), k2 = 0, e2 = 0;
+        inRange.forEach(function (r) { if (r.day === key) { k2 += r.kwh; e2 += r.yield; } });
+        push(m === 'week' ? dayLabel(d) : '' + d.getDate(), k2, e2, hasCost ? dayCost(key) : null);
+        d = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1);
+      }
+    }
+    var series = [
+      { type: 'column', name: 'Charged (kWh)', data: kwh, yAxis: 0, color: BLUE, tooltip: { valueSuffix: ' kWh' } },
+      { type: 'column', name: 'ERE yield', data: ere, yAxis: 1, color: GREEN, tooltip: { valuePrefix: '€ ' } }
+    ];
+    if (hasCost) {
+      series.push({ type: 'column', name: 'Charging cost', data: cost, yAxis: 1, color: ORANGE, tooltip: { valuePrefix: '€ ' } });
+      series.push({ type: 'line', name: 'Net charging cost', data: net, yAxis: 1, color: TXT, dashStyle: 'ShortDash', lineWidth: 1.5, connectNulls: true, marker: { enabled: true, radius: 3 }, tooltip: { valuePrefix: '€ ' } });
+    }
+    charts.main = Highcharts.chart(el, {
+      chart: { backgroundColor: 'transparent', zoomType: 'x', spacingTop: 8, animation: false }, title: { text: null }, credits: { enabled: false },
+      legend: { itemStyle: { color: TXT, fontWeight: 'normal' } },
+      xAxis: { categories: cats, labels: { style: axisStyle() }, lineColor: GRID, tickColor: GRID, crosshair: true, tickInterval: cats.length > 16 ? 2 : 1 },
+      yAxis: [
+        { title: { text: 'kWh', style: { color: BLUE } }, labels: { style: { color: BLUE, fontSize: '11px' } }, gridLineColor: GRID, min: 0 },
+        { title: { text: 'Euro', style: { color: GREEN } }, labels: { style: { color: GREEN, fontSize: '11px' }, format: '€ {value}' }, gridLineWidth: 0, min: 0, opposite: true }
+      ],
+      tooltip: { shared: true, backgroundColor: 'rgba(20,28,40,0.95)', borderColor: 'rgba(255,255,255,0.2)', style: { color: '#e0e0e0' }, valueDecimals: 2 },
+      plotOptions: { series: { animation: false }, column: { borderWidth: 0, borderRadius: 2, groupPadding: 0.12, pointPadding: 0.04 }, line: { marker: { enabled: false } } },
+      series: series
+    });
+  }
+
+  function drawWeekday() {
+    destroy('wd');
+    var el = document.getElementById('jl-chart-wd');
+    if (!el || typeof Highcharts === 'undefined') { return; }
+    var TXT = cssColor('--jl-text', '#e0e0e0'), GRID = 'rgba(128,128,128,0.2)', BLUE = '#2f8cff', GREEN = '#66bb6a', ORANGE = '#ffb366';
+    var wd = $scope.insights.wd, hasCost = $scope.insights.costPerKwh != null;
+    function e(v) { return '€ ' + v.toFixed(2); }
+    charts.wd = Highcharts.chart(el, {
+      chart: { type: 'column', backgroundColor: 'transparent', animation: false }, title: { text: null }, legend: { enabled: false }, credits: { enabled: false },
+      xAxis: { categories: WD, labels: { style: axisStyle() }, lineColor: GRID, tickColor: GRID },
+      yAxis: { title: { text: 'kWh', style: { color: BLUE } }, labels: { style: { color: BLUE, fontSize: '11px' } }, gridLineColor: GRID, min: 0 },
+      tooltip: {
+        useHTML: true, backgroundColor: 'rgba(20,28,40,0.95)', borderColor: 'rgba(255,255,255,0.2)', style: { color: '#e0e0e0' },
+        formatter: function () {
+          var w = wd[this.point.index], rowsHtml = '<tr><td style="padding-right:14px;color:' + BLUE + '">Charged</td><td style="text-align:right"><b>' + w.kwh.toFixed(1) + ' kWh</b></td></tr>';
+          if (hasCost) { rowsHtml += '<tr><td style="color:' + ORANGE + '">Charging cost</td><td style="text-align:right"><b>' + e(w.cost) + '</b></td></tr>'; }
+          rowsHtml += '<tr><td style="color:' + GREEN + '">ERE yield</td><td style="text-align:right"><b>' + (hasCost ? '&minus; ' : '') + e(w.yield) + '</b></td></tr>';
+          if (hasCost) { rowsHtml += '<tr><td style="border-top:1px solid rgba(255,255,255,0.25);padding-top:3px">Net charging cost</td><td style="border-top:1px solid rgba(255,255,255,0.25);padding-top:3px;text-align:right"><b>' + e(w.cost - w.yield) + '</b></td></tr>'; }
+          return '<b>' + this.point.category + '</b><table style="margin-top:4px;font-size:12px">' + rowsHtml + '</table>';
+        }
+      },
+      plotOptions: { series: { animation: false }, column: { borderWidth: 0, borderRadius: 2, color: BLUE, dataLabels: { enabled: true, color: TXT, style: { color: TXT, textOutline: 'none', fontWeight: 'normal', fontSize: '12px' }, format: '{y:.0f}' } } },
+      series: [{ name: 'Charged', data: wd.map(function (w) { return +w.kwh.toFixed(1); }) }]
+    });
+  }
+
+  var pending = null;
+  $scope.viewChanged = function () {
+    if (pending) { $timeout.cancel(pending); }
+    pending = $timeout(function () {
+      pending = null;
+      if (!$scope.loaded) { return; }
+      build();
+      $timeout(function () {
+        if ($scope.tab === 'overview') { drawMain(); } else { destroy('main'); }
+        if ($scope.tab === 'insights' && $scope.insights.count >= 3) { drawWeekday(); } else { destroy('wd'); }
+      }, 0);
+    }, 30);
+  };
+
+  $scope.$on('$destroy', function () {
+    if (off) { off(); off = null; }
+    livesocket.unsubscribePlugin(KEY);
+    Object.keys(charts).forEach(destroy);
+  });
+});
+</script>

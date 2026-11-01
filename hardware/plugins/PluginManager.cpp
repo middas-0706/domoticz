@@ -455,6 +455,7 @@ namespace http {
 								ATTRIBUTE_VALUE(pParamEle, "max", root[iPluginCnt]["parameters"][iParams]["max"]);
 								ATTRIBUTE_VALUE(pParamEle, "step", root[iPluginCnt]["parameters"][iParams]["step"]);
 								ATTRIBUTE_VALUE(pParamEle, "visible_when", root[iPluginCnt]["parameters"][iParams]["visible_when"]);
+								ATTRIBUTE_VALUE(pParamEle, "filter", root[iPluginCnt]["parameters"][iParams]["filter"]);
 
 								if (!groupLabel.empty())
 								{
