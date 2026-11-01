@@ -67,7 +67,9 @@ namespace mcp
 	bool getSceneHistory(const Json::Value &jsonRequest, Json::Value &jsonRPCRep);
 
 	bool getHardware(const Json::Value &jsonRequest, Json::Value &jsonRPCRep);
+	bool getHardwareStatus(const Json::Value &jsonRequest, Json::Value &jsonRPCRep);
 	bool getSystemSettings(const Json::Value &jsonRequest, Json::Value &jsonRPCRep);
+	bool getEnergySummary(const Json::Value &jsonRequest, Json::Value &jsonRPCRep);
 	bool getSunTimes(const Json::Value &jsonRequest, Json::Value &jsonRPCRep);
 	bool getCameras(const Json::Value &jsonRequest, Json::Value &jsonRPCRep);
 	bool getFloorplans(const Json::Value &jsonRequest, Json::Value &jsonRPCRep);

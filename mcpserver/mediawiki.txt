@@ -209,7 +209,7 @@ Tools are actions an AI agent can invoke. All tools accept and return plain text
 |-
 | <code>get_all_devices</code> || <code>filter</code> (optional: light/temp/weather/utility), <code>hw_idx</code> (optional, integer), <code>include_unused</code> (optional, boolean) || Return a list of devices, optionally filtered by category, hardware adapter IDX, or inclusion of unused/disabled devices. Each entry includes name, type, current value, idx, battery level (if applicable; 255 = no battery), and signal level/RSSI (if applicable).
 |-
-| <code>get_device</code> || <code>name</code> or <code>idx</code> (at least one required) || Return full details for a single device, including hardware, type, current value, last update, battery level (if applicable), and signal level/RSSI (if applicable).
+| <code>get_device</code> || <code>name</code> or <code>idx</code> (at least one required) || Return full details for a single device, including hardware, type, current value, the values as the device list shows them (Data, Usage, CounterToday, Counter, the delivered counters and the unit), last update, battery level (if applicable), and signal level/RSSI (if applicable).
 |}
 
 === Switch & sensor control ===
@@ -307,9 +307,9 @@ Tools are actions an AI agent can invoke. All tools accept and return plain text
 |-
 ! Tool !! Parameters !! Description
 |-
-| <code>get_sensor_history</code> || <code>name</code> or <code>idx</code> (one required), <code>days</code> (optional, default 7), <code>start_date</code> / <code>end_date</code> (optional, YYYY-MM-DD), <code>count</code> (optional, 1–500) || Retrieve history for any device. For '''sensors''' (temperature, humidity, barometer, rain, wind, UV, percentage, fan, P1 smart meter, energy/kWh, gas, water, counters): returns daily aggregated min/avg/max calendar data. Specify <code>days</code> for a trailing window or <code>start_date</code>+<code>end_date</code> for a custom range. For '''switches and text/alert devices''': returns on/off/dim/text event log entries from <code>LightingLog</code>, including the triggering user. For scene/group activation history use <code>get_scene_history</code> instead. Use <code>count</code> for the last N events regardless of date, or <code>days</code>/<code>start_date</code>+<code>end_date</code> for a date-filtered log.
+| <code>get_sensor_history</code> || <code>name</code> or <code>idx</code> (one required), <code>days</code> (optional, default 7), <code>start_date</code> / <code>end_date</code> (optional, YYYY-MM-DD), <code>count</code> (optional, 1–500) || Retrieve history for any device. For '''sensors''' (temperature, humidity, barometer, rain, wind, UV, percentage, fan, P1 smart meter, energy/kWh, gas, water, counters): returns daily aggregated min/avg/max calendar data. Specify <code>days</code> for a trailing window or <code>start_date</code>+<code>end_date</code> for a custom range. For '''switches and text/alert devices''': returns on/off/dim/text event log entries from <code>LightingLog</code>, including the triggering user. For energy, gas and water counters and P1 meters each day also shows its price when price calculation is enabled. For scene/group activation history use <code>get_scene_history</code> instead. Use <code>count</code> for the last N events regardless of date, or <code>days</code>/<code>start_date</code>+<code>end_date</code> for a date-filtered log.
 |-
-| <code>get_sensor_short_log</code> || <code>name</code> or <code>idx</code> (one required), <code>hours</code> (optional, 1–168, default 24), <code>count</code> (optional, 1–1000) || Retrieve recent high-resolution measurements at ~5-minute intervals. Use this for today's data, the last 24 hours, or the last N readings. Short-log data is kept for a configurable number of days (default: 1 day). Not applicable to switches, text devices, or scenes — use <code>get_sensor_history</code> for multi-day or long-term data.
+| <code>get_sensor_short_log</code> || <code>name</code> or <code>idx</code> (one required), <code>hours</code> (optional, 1–168, default 24), <code>count</code> (optional, 1–1000) || Retrieve recent high-resolution measurements at ~5-minute intervals. Use this for today's data, the last 24 hours, or the last N readings. Short-log data is kept for a configurable number of days (default: 1 day). P1 smart meter readings are shown as import_t1/import_t2/export_t1/export_t2 in kWh and power_import/power_export in W. Not applicable to switches, text devices, or scenes — use <code>get_sensor_history</code> for multi-day or long-term data.
 |}
 
 === User variables ===
@@ -337,7 +337,11 @@ Tools are actions an AI agent can invoke. All tools accept and return plain text
 |-
 | <code>get_hardware</code> || — || List all configured hardware adapters with their type, address and enabled status.
 |-
-| <code>get_settings</code> || — || Return key system configuration values (title, location, temperature scale, language, etc.).
+| <code>get_hardware_status</code> || <code>hw_idx</code> (optional) || Runtime status per hardware adapter: enabled, started, last heartbeat, last data received, data timeout, number of devices and the most recent device update. Admin only.
+|-
+| <code>get_settings</code> || — || Return key system configuration values (title, location, temperature scale, language, etc.) and the devices selected in the Energy Dashboard settings.
+|-
+| <code>get_energy_summary</code> || (none) || Today's energy flows for the Energy Dashboard devices: grid import and export, solar, battery charge and discharge, house consumption, the flows between grid, solar, battery and house (split per short log interval) and the self-sufficiency, plus today's gas and water.
 |-
 | <code>get_sun_times</code> || — || Full solar data for today: sunrise, sunset, dawn, dusk, solar noon, civil/nautical twilight times and day length.
 |-

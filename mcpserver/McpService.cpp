@@ -40,6 +40,9 @@
 #include "../main/RFXNames.h"
 #include "../hardware/hardwaretypes.h"
 #include "../main/WebServerHandleGraphInternals.h"
+#include "../main/EnergyBalance.h"
+#include "../main/mainworker.h"
+#include "../main/localtime_r.h"
 #include "../mcpserver/McpSseSession.h"
 #include "../mcpserver/McpSessionRegistry.h"
 
@@ -78,6 +81,7 @@ static const std::unordered_map<std::string, http::server::_eUserRights> s_toolM
     { "update_event",           http::server::URIGHTS_ADMIN },
     { "delete_event",           http::server::URIGHTS_ADMIN },
     { "set_security_status",    http::server::URIGHTS_ADMIN },
+    { "get_hardware_status",    http::server::URIGHTS_ADMIN },
 };
 
 extern http::server::CWebServerHelper m_webservers;
@@ -845,6 +849,31 @@ namespace mcp		// Model Context Protocol
 		sResult += "Sensor timeout (min): " + std::to_string(iSensorTimeout) + "\n";
 		sResult += "Battery low notification threshold: " + std::to_string(iBatterLow) + "%\n";
 		sResult += "Active timer plan: " + std::to_string(iActivePlan) + "\n";
+
+		// Devices selected in the Energy Dashboard settings
+		std::string szESettings;
+		Json::Value esettings;
+		if (m_sql.GetPreferencesVar("ESettings", szESettings) && ParseJSon(szESettings, esettings))
+		{
+			static const std::pair<const char *, const char *> roles[] = {
+				{ "idP1", "Grid (P1 meter)" }, { "idSolar", "Solar" }, { "idGas", "Gas" }, { "idWater", "Water" },
+				{ "idBatteryEnergyIn", "Battery charge energy" }, { "idBatteryEnergyOut", "Battery discharge energy" },
+				{ "idBatteryWatt", "Battery power" }, { "idBatterySoc", "Battery state of charge" }, { "idBatteryVolt", "Battery voltage" },
+				{ "idOutsideTempSensor", "Outside temperature" }, { "idTextSensor", "Text" },
+				{ "idExtra1", "Extra 1" }, { "idExtra2", "Extra 2" }, { "idExtra3", "Extra 3" },
+			};
+			std::string sEnergy;
+			for (const auto &role : roles)
+			{
+				if (!esettings.isMember(role.first) || !esettings[role.first].isInt() || esettings[role.first].asInt() <= 0)
+					continue;
+				const int idx = esettings[role.first].asInt();
+				auto result = m_sql.safe_query("SELECT Name FROM DeviceStatus WHERE (ID == %d)", idx);
+				sEnergy += std::string("  ") + role.second + ": idx=" + std::to_string(idx) + " \"" + (result.empty() ? "(deleted device)" : result[0][0]) + "\"\n";
+			}
+			if (!sEnergy.empty())
+				sResult += "Energy Dashboard devices:\n" + sEnergy;
+		}
 		return sResult;
 	}
 
@@ -1367,9 +1396,28 @@ namespace mcp		// Model Context Protocol
 			{}
 		},
 		{
+			"get_hardware_status",
+			"Get hardware status",
+			"Return the runtime status of the hardware adapters: enabled, started, last heartbeat, last data received, "
+			"data timeout, number of devices and the most recent device update. Use this to find out why devices "
+			"of a hardware adapter stopped updating.",
+			{
+				{ "hw_idx", "integer", "Optional hardware IDX to return only that adapter", false, {} },
+			}
+		},
+		{
 			"get_settings",
 			"Get system settings",
-			"Return key Domoticz system settings and preferences.",
+			"Return key Domoticz system settings and preferences, including the devices selected in the Energy Dashboard settings.",
+			{}
+		},
+		{
+			"get_energy_summary",
+			"Get today's energy summary",
+			"Return today's energy flows for the devices selected in the Energy Dashboard settings: grid import and "
+			"export, solar, battery charge and discharge, house consumption, how the energy flowed between grid, solar, "
+			"battery and house, and the self-sufficiency (share of the house consumption not taken from the grid). "
+			"Also today's gas and water usage when those devices are selected.",
 			{}
 		},
 		{
@@ -1480,7 +1528,7 @@ namespace mcp		// Model Context Protocol
 			"add_room", "update_room", "delete_room", "reorder_rooms",
 			"add_room_devices", "remove_room_devices", "reorder_room_devices",
 			// reads that expose scripts, credentials, configuration or accounts
-			"get_events", "get_event", "get_user_variables", "get_hardware",
+			"get_events", "get_event", "get_user_variables", "get_hardware", "get_hardware_status",
 			"get_settings", "get_users", "get_logging"
 		};
 
@@ -1553,7 +1601,9 @@ namespace mcp		// Model Context Protocol
 			{ "update_user_variable",   updateUserVariable },
 			{ "delete_user_variable",   deleteUserVariable },
 			{ "get_hardware",           getHardware },
+			{ "get_hardware_status",    getHardwareStatus },
 			{ "get_settings",           getSystemSettings },
+			{ "get_energy_summary",     getEnergySummary },
 			{ "get_sun_times",          getSunTimes },
 			{ "get_cameras",            getCameras },
 			{ "get_floorplans",         getFloorplans },
@@ -3431,6 +3481,27 @@ namespace mcp		// Model Context Protocol
 		std::string sResult;
 		bool bFound = false;
 
+		// The values as the device list shows them (counters for today, usage and their unit)
+		auto appendReadableValues = [](const Json::Value &device, std::string &sOut) {
+			// Same layout as the other lines: the value starts in column 13, or one space after a longer label
+			auto addLine = [&sOut](const std::string &sLabel, const std::string &sValue) {
+				std::string sLine = sLabel + ":";
+				sLine.resize(std::max<size_t>(13, sLine.size() + 1), ' ');
+				sOut += "  " + sLine + sValue + "\n";
+			};
+			static const char *fields[] = { "Usage", "UsageDeliv", "CounterToday", "Counter", "CounterDelivToday", "CounterDeliv" };
+			for (const char *field : fields)
+			{
+				if (device.isMember(field) && !device[field].asString().empty())
+					addLine(field, device[field].asString());
+			}
+			std::string sUnit = device.isMember("ValueUnits") ? device["ValueUnits"].asString() : "";
+			if (sUnit.empty() && device.isMember("vunit"))
+				sUnit = device["vunit"].asString();
+			if (!sUnit.empty())
+				addLine("Unit", sUnit);
+		};
+
 		if (bHasName)
 		{
 			Json::Value device;
@@ -3447,6 +3518,7 @@ namespace mcp		// Model Context Protocol
 					sResult += "  SubType:     " + device["SubType"].asString() + "\n";
 				if (device.isMember("Data"))
 					sResult += "  Data:        " + device["Data"].asString() + "\n";
+				appendReadableValues(device, sResult);
 				if (device.isMember("nValue"))
 					sResult += "  nValue:      " + device["nValue"].asString() + "\n";
 				if (device.isMember("sValue"))
@@ -3489,6 +3561,13 @@ namespace mcp		// Model Context Protocol
 				sResult += "  DeviceID:    " + row[3] + "\n";
 				sResult += "  Type:        " + row[4] + "\n";
 				sResult += "  SubType:     " + row[5] + "\n";
+				Json::Value device;
+				if (getDeviceByIdx(nIdx, device))
+				{
+					if (device.isMember("Data"))
+						sResult += "  Data:        " + device["Data"].asString() + "\n";
+					appendReadableValues(device, sResult);
+				}
 				sResult += "  nValue:      " + row[6] + "\n";
 				sResult += "  sValue:      " + row[7] + "\n";
 				sResult += "  LastUpdate:  " + row[8] + "\n";
@@ -4112,6 +4191,18 @@ namespace mcp		// Model Context Protocol
 		sResult += "------------|--------------------------------------\n";
 
 		const Json::Value& results = root["result"];
+
+		// Day prices of energy, gas and water counters, from the calendar table the counter is stored in
+		std::map<std::string, std::string> dayPrices;
+		if ((sSensor == "counter") && results.isArray() && !results.empty() && results[0].isMember("d"))
+		{
+			const bool bMultiMeter = (dType == pTypeP1Power) || (dType == pTypeCURRENT) || (dType == pTypeCURRENTENERGY);
+			auto priceResult = m_sql.safe_query("SELECT Date, Price FROM %s WHERE (DeviceRowID == %" PRIu64 ") AND (Date >= '%q') AND (Price != 0) ORDER BY Date ASC",
+				bMultiMeter ? "MultiMeter_Calendar" : "Meter_Calendar", nIdx, results[0]["d"].asString().substr(0, 10).c_str());
+			for (const auto &sd : priceResult)
+				dayPrices[sd[0].substr(0, 10)] = std_format("%.2f", atof(sd[1].c_str()));
+		}
+
 		for (const auto& row : results)
 		{
 			std::string sDate = row.isMember("d") ? row["d"].asString().substr(0, 10) : "?";
@@ -4207,6 +4298,10 @@ namespace mcp		// Model Context Protocol
 				}
 				else if (row.isMember("v"))
 					sLine += " " + row["v"].asString() + sUSuffix;
+
+				auto itPrice = dayPrices.find(sDate);
+				if (itPrice != dayPrices.end())
+					sLine += " price " + itPrice->second;
 
 				sResult += sLine + "\n";
 			}
@@ -4499,7 +4594,15 @@ namespace mcp		// Model Context Protocol
 			else if (dbasetable == "MultiMeter")
 			{
 				// row: 0=Value1..5=Value6, 6=Price, 7=Date
-				if (row.size() >= 8)
+				if ((row.size() >= 8) && (dType == pTypeP1Power))
+				{
+					// Value1/5 = import tariff 1/2 and Value2/6 = export tariff 1/2 in Wh, Value3/4 = actual import/export in W
+					auto kWh = [](const std::string &s) { return std_format("%.3f", atof(s.c_str()) / 1000.0); };
+					sLine += "  import_t1=" + kWh(row[0]) + "  import_t2=" + kWh(row[4]) +
+						"  export_t1=" + kWh(row[1]) + "  export_t2=" + kWh(row[5]) + " kWh" +
+						"  power_import=" + row[2] + "  power_export=" + row[3] + " W";
+				}
+				else if (row.size() >= 8)
 				{
 					const char *labels[] = { "v1", "v2", "v3", "v4", "v5", "v6" };
 					for (int i = 0; i < 6; ++i)
@@ -6017,9 +6120,117 @@ namespace mcp		// Model Context Protocol
 		return true;
 	}
 
+	bool getHardwareStatus(const Json::Value &jsonRequest, Json::Value &jsonRPCRep)
+	{
+		const Json::Value &args = jsonRequest["params"]["arguments"];
+		std::vector<std::vector<std::string>> result;
+		if (args.isMember("hw_idx") && !args["hw_idx"].isNull())
+			result = m_sql.safe_query("SELECT ID, Name, Enabled, Type, DataTimeout FROM Hardware WHERE (ID == %d)", jsonAsIdx(args["hw_idx"]));
+		else
+			result = m_sql.safe_query("SELECT ID, Name, Enabled, Type, DataTimeout FROM Hardware ORDER BY Name");
+		if (result.empty())
+		{
+			mcp::setToolResult(jsonRPCRep, "No hardware found.", false);
+			return true;
+		}
+
+		auto formatTime = [](const time_t t) -> std::string {
+			if (t == 0)
+				return "never";
+			struct tm ltime;
+			localtime_r(&t, &ltime);
+			return std_format("%04d-%02d-%02d %02d:%02d:%02d", ltime.tm_year + 1900, ltime.tm_mon + 1, ltime.tm_mday, ltime.tm_hour, ltime.tm_min, ltime.tm_sec);
+		};
+
+		std::string sResult = std::to_string(result.size()) + " hardware adapter(s):\n";
+		for (const auto &row : result)
+		{
+			const int hwID = atoi(row[0].c_str());
+			const bool bEnabled = (atoi(row[2].c_str()) == 1);
+			sResult += "- \"" + row[1] + "\" [idx=" + row[0] + ", type=" + std::string(Hardware_Type_Desc(atoi(row[3].c_str()))) + "]\n";
+			sResult += std::string("  Enabled:            ") + (bEnabled ? "yes" : "no") + "\n";
+
+			CDomoticzHardwareBase *pHardware = m_mainworker.GetHardware(hwID);
+			if (pHardware)
+			{
+				sResult += std::string("  Started:            ") + (pHardware->IsStarted() ? "yes" : "no") + "\n";
+				sResult += "  Last heartbeat:     " + formatTime(pHardware->m_LastHeartbeat) + "\n";
+				sResult += "  Last data received: " + formatTime(pHardware->m_LastHeartbeatReceive) + "\n";
+			}
+			else if (bEnabled)
+				sResult += "  Started:            no (not running)\n";
+
+			const int iDataTimeout = atoi(row[4].c_str());
+			sResult += "  Data timeout:       " + (iDataTimeout > 0 ? std::to_string(iDataTimeout) + " s" : std::string("disabled")) + "\n";
+
+			auto devResult = m_sql.safe_query("SELECT COUNT(*), MAX(LastUpdate) FROM DeviceStatus WHERE (HardwareID == %d)", hwID);
+			if (!devResult.empty())
+			{
+				sResult += "  Devices:            " + devResult[0][0] + "\n";
+				if (!devResult[0][1].empty())
+					sResult += "  Last device update: " + devResult[0][1] + "\n";
+			}
+		}
+		mcp::setToolResult(jsonRPCRep, sResult, false);
+		return true;
+	}
+
 	bool getSystemSettings(const Json::Value &jsonRequest, Json::Value &jsonRPCRep)
 	{
 		mcp::setToolResult(jsonRPCRep, buildSettingsText(), false);
+		return true;
+	}
+
+	bool getEnergySummary(const Json::Value &jsonRequest, Json::Value &jsonRPCRep)
+	{
+		_tEnergyBalance eb;
+		if (!CalculateEnergyBalanceToday(eb))
+		{
+			mcp::setToolResult(jsonRPCRep, "No grid (P1) meter is selected in the Energy Dashboard settings, so there is no energy summary.", false);
+			return true;
+		}
+
+		auto kWh = [](const double v) { return std_format("%.3f kWh", v); };
+		std::string sResult = "Energy summary for today\n";
+		sResult += "========================\n";
+		sResult += "Calculated from: " + std::string(eb.Method == "5min"
+			? std_format("%d short log intervals (flows split per interval)", eb.Intervals)
+			: "today's counters (no short log available, flows not split)") + "\n";
+		sResult += "Grid import:       " + kWh(eb.Import) + "\n";
+		sResult += "Grid export:       " + kWh(eb.Export) + "\n";
+		sResult += "Solar:             " + kWh(eb.Solar) + "\n";
+		sResult += "Battery charge:    " + kWh(eb.BatteryIn) + "\n";
+		sResult += "Battery discharge: " + kWh(eb.BatteryOut) + "\n";
+		sResult += "House consumption: " + kWh(eb.House) + "\n";
+		if (eb.Method == "5min")
+		{
+			sResult += "Flows:\n";
+			sResult += "  Solar to house:     " + kWh(eb.SolarToHouse) + "\n";
+			sResult += "  Solar to battery:   " + kWh(eb.SolarToBattery) + "\n";
+			sResult += "  Solar to grid:      " + kWh(eb.SolarToGrid) + "\n";
+			sResult += "  Battery to house:   " + kWh(eb.BatteryToHouse) + "\n";
+			sResult += "  Battery to grid:    " + kWh(eb.BatteryToGrid) + "\n";
+			sResult += "  Grid to house:      " + kWh(eb.GridToHouse) + "\n";
+			sResult += "  Grid to battery:    " + kWh(eb.GridToBattery) + "\n";
+		}
+		sResult += "Self-sufficiency:  " + (eb.SelfSufficiency >= 0 ? std_format("%.0f%%", eb.SelfSufficiency) : std::string("unknown (no consumption yet)")) + "\n";
+
+		// Gas and water of today, as the Energy Dashboard shows them
+		std::string szESettings;
+		Json::Value esettings;
+		if (m_sql.GetPreferencesVar("ESettings", szESettings) && ParseJSon(szESettings, esettings))
+		{
+			for (const auto &role : { std::make_pair("idGas", "Gas today:         "), std::make_pair("idWater", "Water today:       ") })
+			{
+				if (!esettings.isMember(role.first) || !esettings[role.first].isInt() || esettings[role.first].asInt() <= 0)
+					continue;
+				Json::Value device;
+				if (getDeviceByIdx(esettings[role.first].asInt(), device) && device.isMember("CounterToday"))
+					sResult += role.second + device["CounterToday"].asString() + "\n";
+			}
+		}
+
+		mcp::setToolResult(jsonRPCRep, sResult, false);
 		return true;
 	}
 
