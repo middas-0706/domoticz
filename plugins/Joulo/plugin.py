@@ -563,7 +563,17 @@ class BasePlugin:
 
     # ------------------------------------------------------------------ custom page
     def _templates_dir(self):
-        return os.path.join(os.path.abspath(os.path.join(_HERE, "..", "..")), "www", "templates")
+        # The plugin folder can live in the userdata folder (Docker, -userdata), so the www folder of the
+        # Domoticz installation comes from the startup folder first and from the plugin folder second.
+        candidates = []
+        startup = Parameters.get("StartupFolder")
+        if startup:
+            candidates.append(os.path.join(startup, "www"))
+        candidates.append(os.path.join(os.path.abspath(os.path.join(_HERE, "..", "..")), "www"))
+        for www in candidates:
+            if os.path.isdir(www):
+                return os.path.join(www, "templates")
+        return os.path.join(candidates[0], "templates")
 
     def _install_page(self):
         src = os.path.join(_HERE, PAGE_NAME)

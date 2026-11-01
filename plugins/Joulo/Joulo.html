@@ -274,14 +274,21 @@ app.controller('jouloCtrl', function ($scope, $http, $timeout, $element, livesoc
   $scope.tab = null;
   $scope.chargers = []; $scope.sessions = []; $scope.ere = null; $scope.energy = null; $scope.estimate = null;
   $scope.settings = {}; $scope.setup = {}; $scope.error = ''; $scope.version = '';
-  $scope.sel = { charger: 'all' };
-  $scope.period = { mode: 'month', anchor: new Date() };
+  // the view choices are kept in the browser: period, insights window and charger
+  var STORE = 'joulo.view';
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(STORE)) || {}; } catch (e) { saved = {}; }
+  function saveView() {
+    try { localStorage.setItem(STORE, JSON.stringify({ mode: $scope.period.mode, insightWindow: $scope.insightWindow, charger: $scope.sel.charger })); } catch (e) { /* storage not available */ }
+  }
+  $scope.sel = { charger: typeof saved.charger === 'string' ? saved.charger : 'all' };
+  $scope.period = { mode: ['day', 'week', 'month', 'year'].indexOf(saved.mode) >= 0 ? saved.mode : 'month', anchor: new Date() };
   $scope.range = { from: '', to: '', label: '' };
   $scope.totals = { kwh: 0, count: 0, ere: 0, yield: 0, cost: 0, hasCost: false };
   $scope.insights = { count: 0 };
   $scope.insightWindows = [{ key: '7', label: 'Week' }, { key: '30', label: 'Month' }, { key: '90', label: '3 months' }, { key: '365', label: 'Year' }, { key: 'all', label: 'All' }];
-  $scope.insightWindow = '90';
-  $scope.setInsightWindow = function (k) { $scope.insightWindow = k; $scope.viewChanged(); };
+  $scope.insightWindow = ['7', '30', '90', '365', 'all'].indexOf(saved.insightWindow) >= 0 ? saved.insightWindow : '90';
+  $scope.setInsightWindow = function (k) { $scope.insightWindow = k; saveView(); $scope.viewChanged(); };
   $scope.sessionRows = []; $scope.rowLimit = 30;
   $scope.energyDevices = []; $scope.realSel = {};
   $scope.toast = {};
@@ -356,7 +363,7 @@ app.controller('jouloCtrl', function ($scope, $http, $timeout, $element, livesoc
     $scope.chargers = chargers; $scope.sessions = sessions; $scope.ere = ere; $scope.energy = energy; $scope.estimate = estimate;
     $scope.settings = settings; $scope.setup = setup; $scope.error = error; $scope.version = version;
     chargers.forEach(function (c) { if ($scope.realSel[c.id] === undefined || c.real_idx) { $scope.realSel[c.id] = c.real_idx || null; } });
-    if (chargers.length < 2) { $scope.sel.charger = 'all'; }
+    if (chargers.length < 2 || ($scope.sel.charger !== 'all' && !chargers.some(function (c) { return c.id === $scope.sel.charger; }))) { $scope.sel.charger = 'all'; }
     $scope.loaded = keys.length > 0;
     if ($scope.tab === null && $scope.loaded) {
       $scope.tab = ($scope.openSteps() ? 'setup' : 'overview');
@@ -538,7 +545,8 @@ app.controller('jouloCtrl', function ($scope, $http, $timeout, $element, livesoc
     else { from = new Date(a.getFullYear(), 0, 1); to = new Date(a.getFullYear(), 11, 31); label = '' + a.getFullYear(); }
     $scope.range = { from: fmt(from), to: fmt(to), label: label };
   }
-  $scope.setMode = function (m) { $scope.period.mode = m; $scope.viewChanged(); };
+  $scope.setMode = function (m) { $scope.period.mode = m; saveView(); $scope.viewChanged(); };
+  $scope.$watch('sel.charger', function (v, old) { if (v !== old) { saveView(); } });
   $scope.shift = function (n) {
     var a = $scope.period.anchor, m = $scope.period.mode;
     if (m === 'day') { a = new Date(a.getFullYear(), a.getMonth(), a.getDate() + n); }
@@ -553,19 +561,61 @@ app.controller('jouloCtrl', function ($scope, $http, $timeout, $element, livesoc
   };
 
   // ---------------------------------------------------------------- derived data
+  // kWh the real charger device recorded on a day, null while its data is not loaded
+  function realKwh(day) {
+    var idxs = realIdxList();
+    if (!idxs.length) { return null; }
+    var sum = 0, any = false, year = +day.substring(0, 4);
+    idxs.forEach(function (idx) {
+      var m = costCache[idx] && costCache[idx][year];
+      if (m === undefined) { loadCostYear(idx, year); return; }
+      any = true;
+      if (m[day]) { sum += m[day].kwh; }
+    });
+    return any ? sum : null;
+  }
+  // The days a session belongs to with the share of it on each day. A session that runs past midnight is
+  // split in proportion to what the real charger device recorded on those days, otherwise it stays on its start day.
+  function parts(r) {
+    var endDay = r.end ? fmt(r.end) : r.day, whole = [{ day: r.day, f: 1 }];
+    if (endDay <= r.day || !$scope.hasRealDevice()) { return whole; }
+    var days = [], d = parseDay(r.day), last = parseDay(endDay);
+    while (d <= last && days.length < 8) { days.push(fmt(d)); d = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1); }
+    if (d <= last) { return whole; }
+    var ks = days.map(realKwh), total = 0;
+    for (var i = 0; i < ks.length; i++) { if (ks[i] == null) { return whole; } total += ks[i]; }
+    if (!(total > 0)) { return whole; }
+    var res = [];
+    days.forEach(function (day, j) { if (ks[j] > 0) { res.push({ day: day, f: ks[j] / total }); } });
+    return res;
+  }
+  function sumWhere(rows, test) {
+    var k = 0, e = 0;
+    rows.forEach(function (r) { parts(r).forEach(function (p) { if (test(p.day)) { k += r.kwh * p.f; e += r.yield * p.f; } }); });
+    return { k: k, e: e };
+  }
+
   function sessionList() {
     var rows = $scope.allSessions().map(function (s) {
       var start = new Date(s.started_at), end = s.ended_at ? new Date(s.ended_at) : null;
       return { raw: s, day: fmt(start), dayLabel: dayLabel(start), startClock: $scope.clock(s.started_at), endClock: end ? $scope.clock(s.ended_at) : '',
         seconds: Math.max(0, ((end || new Date()) - start) / 1000), kwh: s.kwh || 0, ere: s.ere_credits || 0, yield: s.estimated_euro || 0,
-        active: s.status === 'active' || s.status === 'charging', start: start };
+        active: s.status === 'active' || s.status === 'charging', start: start, end: end };
     });
-    var perDay = {};
-    rows.forEach(function (r) { var p = perDay[r.day] = perDay[r.day] || { kwh: 0, n: 0 }; p.kwh += r.kwh; p.n++; });
+    var dayKwh = {}, dayN = {};
     rows.forEach(function (r) {
-      var c = dayCost(r.day), p = perDay[r.day];
-      r.cost = (c == null) ? null : (p.n > 1 ? (p.kwh ? c * r.kwh / p.kwh : 0) : c);
-      r.approx = p.n > 1;
+      r.parts = parts(r);
+      r.parts.forEach(function (p) { dayKwh[p.day] = (dayKwh[p.day] || 0) + r.kwh * p.f; dayN[p.day] = (dayN[p.day] || 0) + 1; });
+    });
+    rows.forEach(function (r) {
+      var cost = 0, unknown = false;
+      r.approx = r.parts.length > 1;
+      r.parts.forEach(function (p) {
+        var c = dayCost(p.day);
+        if (c == null) { unknown = true; return; }
+        if (dayN[p.day] > 1) { r.approx = true; cost += dayKwh[p.day] ? c * r.kwh * p.f / dayKwh[p.day] : 0; } else { cost += c; }
+      });
+      r.cost = unknown ? null : cost;
     });
     return rows;
   }
@@ -575,9 +625,12 @@ app.controller('jouloCtrl', function ($scope, $http, $timeout, $element, livesoc
     var rows = sessionList();
     $scope.sessionRows = rows;
     var from = $scope.range.from, to = $scope.range.to;
-    var inRange = rows.filter(function (r) { return r.day >= from && r.day <= to; });
-    var t = { kwh: 0, count: inRange.length, ere: 0, yield: 0, cost: 0, hasCost: $scope.hasRealDevice() };
-    inRange.forEach(function (r) { t.kwh += r.kwh; t.ere += r.ere; t.yield += r.yield; });
+    var t = { kwh: 0, count: 0, ere: 0, yield: 0, cost: 0, hasCost: $scope.hasRealDevice() };
+    rows.forEach(function (r) {
+      var inRange = false;
+      r.parts.forEach(function (p) { if (p.day >= from && p.day <= to) { inRange = true; t.kwh += r.kwh * p.f; t.ere += r.ere * p.f; t.yield += r.yield * p.f; } });
+      if (inRange) { t.count++; }
+    });
     // cost over every day of the period (the real device also counts days Joulo has no session for)
     if (t.hasCost) {
       var d = parseDay(from), end = parseDay(to), n = 0;
@@ -597,9 +650,11 @@ app.controller('jouloCtrl', function ($scope, $http, $timeout, $element, livesoc
       kwh += r.kwh; yld += r.yield;
       i.longest = Math.max(i.longest, r.seconds);
       if (r.seconds > 900 && r.kwh > 0) { var kw = r.kwh / (r.seconds / 3600); i.peakKw = Math.max(i.peakKw, kw); kwSum += kw; kwN++; }
-      days[r.day] = (days[r.day] || 0) + r.kwh;
-      var wd = (r.start.getDay() + 6) % 7;
-      i.wd[wd].kwh += r.kwh; i.wd[wd].yield += r.yield; i.wd[wd].days[r.day] = 1;
+      r.parts.forEach(function (p) {
+        days[p.day] = (days[p.day] || 0) + r.kwh * p.f;
+        var wd = (parseDay(p.day).getDay() + 6) % 7;
+        i.wd[wd].kwh += r.kwh * p.f; i.wd[wd].yield += r.yield * p.f; i.wd[wd].days[p.day] = 1;
+      });
     });
     i.avgKwh = i.count ? kwh / i.count : 0; i.avgKw = kwN ? kwSum / kwN : 0;
     Object.keys(days).forEach(function (d) { if (days[d] > i.bestDayKwh) { i.bestDayKwh = days[d]; i.bestDayLabel = dayLabel(parseDay(d)); } });
@@ -627,22 +682,25 @@ app.controller('jouloCtrl', function ($scope, $http, $timeout, $element, livesoc
       cats.push(label); kwh.push(+k.toFixed(2)); ere.push(+e.toFixed(2));
       cost.push(c == null ? null : +c.toFixed(2)); net.push(c == null || !k ? null : +(c - e).toFixed(2));
     }
-    var inRange = rows.filter(function (r) { return r.day >= from && r.day <= to; });
     if (m === 'day') {
-      inRange.slice().reverse().forEach(function (r) { push(r.startClock, r.kwh, r.yield, r.cost); });
+      // the part of each session that falls on this day
+      rows.slice().reverse().forEach(function (r) {
+        var f = 0;
+        r.parts.forEach(function (p) { if (p.day >= from && p.day <= to) { f += p.f; } });
+        if (f > 0) { push(r.startClock, r.kwh * f, r.yield * f, r.cost == null ? null : r.cost * f); }
+      });
     } else if (m === 'year') {
       for (var mo = 0; mo < 12; mo++) {
-        var pre = from.substring(0, 4) + '-' + p2(mo + 1), k = 0, e = 0, c = 0, any = false;
-        inRange.forEach(function (r) { if (r.day.substring(0, 7) === pre) { k += r.kwh; e += r.yield; } });
+        var pre = from.substring(0, 4) + '-' + p2(mo + 1), c = 0, any = false;
+        var sm = sumWhere(rows, function (day) { return day.substring(0, 7) === pre; }), k = sm.k, e = sm.e;
         if (hasCost) { var dd = new Date(+from.substring(0, 4), mo + 1, 0).getDate(); for (var x = 1; x <= dd; x++) { var cc = dayCost(pre + '-' + p2(x)); if (cc != null) { c += cc; any = true; } } }
         push(MONTHS[mo], k, e, hasCost && any ? c : null);
       }
     } else {
       var d = parseDay(from), end = parseDay(to);
       while (d <= end) {
-        var key = fmt(d), k2 = 0, e2 = 0;
-        inRange.forEach(function (r) { if (r.day === key) { k2 += r.kwh; e2 += r.yield; } });
-        push(m === 'week' ? dayLabel(d) : '' + d.getDate(), k2, e2, hasCost ? dayCost(key) : null);
+        var key = fmt(d), sd = sumWhere(rows, function (day) { return day === key; });
+        push(m === 'week' ? dayLabel(d) : '' + d.getDate(), sd.k, sd.e, hasCost ? dayCost(key) : null);
         d = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1);
       }
     }

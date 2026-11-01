@@ -33,6 +33,7 @@ nohup.out
 /Config/zwcfg_*.xml
 /makebetarob
 /plugins/manifest.xml
+/plugins/Joulo/joulo-data/
 install_manifest.txt
 .project
 .cproject
