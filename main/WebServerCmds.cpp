@@ -7461,6 +7461,23 @@ namespace http
 				root["SelfSufficiency"] = eb.SelfSufficiency;
 			else
 				root["SelfSufficiency"] = Json::Value::null;
+
+			// series=1 adds the house consumption per interval split by source, as average power in Watt
+			if (request::findValue(&req, "series") == "1")
+			{
+				const double toWatt = 60000.0 / std::max(1, m_sql.m_ShortLogInterval);
+				root["Series"] = Json::Value(Json::arrayValue);
+				for (const auto &point : eb.Series)
+				{
+					Json::Value item;
+					item["d"] = point.Date;
+					item["s"] = static_cast<int>(point.Solar * toWatt + 0.5);
+					item["bs"] = static_cast<int>(point.BatterySolar * toWatt + 0.5);
+					item["bg"] = static_cast<int>(point.BatteryGrid * toWatt + 0.5);
+					item["g"] = static_cast<int>(point.Grid * toWatt + 0.5);
+					root["Series"].append(item);
+				}
+			}
 		}
 
 		void CWebServer::Cmd_GetkWhStats(WebEmSession& session, const request& req, Json::Value& root)

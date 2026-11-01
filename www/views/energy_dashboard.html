@@ -1,5 +1,8 @@
 <!--
 History:
+ v1.20 2026-11-01
+	- Click a circle to open the log of its device; the house opens today's consumption per source
+
  v1.19 2026-03-19
 	- Added house price display
 
@@ -108,6 +111,69 @@ History:
 
 .etext {
 	fill: rgba(255, 255, 255, 0.85);
+}
+
+#emain svg text,
+#emain svg image,
+#emain svg .eicon {
+	pointer-events: none;
+}
+
+#housepanel {
+	position: absolute;
+	z-index: 20;
+	left: 50%;
+	top: 50%;
+	transform: translate(-50%, -50%);
+	width: min(900px, calc(100% - 32px));
+	box-sizing: border-box;
+	padding: 14px 16px;
+	border-radius: 12px;
+	background: rgba(20, 24, 40, 0.97);
+	border: 1px solid #ff7bff;
+	box-shadow: 0 0 24px rgba(255, 123, 255, 0.25);
+	color: rgba(255, 255, 255, 0.85);
+}
+#housepanel .hp-head {
+	display: flex;
+	align-items: baseline;
+	gap: 16px;
+	flex-wrap: wrap;
+}
+#housepanel .hp-title {
+	font-size: 18px;
+	font-weight: bold;
+}
+#housepanel .hp-close {
+	margin-left: auto;
+	cursor: pointer;
+	font-size: 20px;
+	line-height: 1;
+	background: none;
+	border: 0;
+	color: inherit;
+}
+#housepanel .hp-totals {
+	display: flex;
+	gap: 18px;
+	flex-wrap: wrap;
+	margin: 6px 0 4px 0;
+	font-size: 13px;
+}
+#housepanel .hp-totals i {
+	display: inline-block;
+	width: 10px;
+	height: 10px;
+	border-radius: 2px;
+	margin-right: 5px;
+}
+#housechart {
+	height: 340px;
+}
+#housepanel .hp-empty {
+	padding: 40px 0;
+	text-align: center;
+	opacity: 0.7;
 }
 </style>
 <div id="dashcontent" class="force-select">
@@ -260,7 +326,7 @@ History:
 					</ellipse>
 					<text class="etext" x="34" y="35" opacity="0.7" font-size="1.1px" style="font-variant-caps: normal; font-variant-east-asian: normal; font-variant-ligatures: normal; font-variant-numeric: normal; white-space: pre;">{{ fBattToHome }} Watt</text>
 				</g>
-				<circle class="ecircle ecircle-batt" r="7" cx="30" cy="50" fill="rgba(144,224,144,0.06)" stroke="#90e090" stroke-width=".5" filter="url(#glowBatt)" ng-class="{'circle-active': fActualBattWatt != 0}"/>
+				<circle class="ecircle ecircle-batt" ng-click="openLog(idBattWatt != -1 ? idBattWatt : idBattSoc)" r="7" cx="30" cy="50" fill="rgba(144,224,144,0.06)" stroke="#90e090" stroke-width=".5" filter="url(#glowBatt)" ng-class="{'circle-active': fActualBattWatt != 0}"/>
 				<g class="eicon" ng-show="!customIconBatt">
 					<g transform="matrix(0.010083, 0, 0, 0.008335, 27.65, 45.2)">
 						<path d="m 319.089 27.221 h -36.475 v -27.221 h -95.27 v 27.221 h -34.607 c -22.517 0 -40.829 18.317 -40.829 40.832 v 362.946 c 0 22.51 18.317 40.83 40.829 40.83 h 166.352 c 22.524 0 40.832 -18.32 40.832 -40.83 v -362.947 c 0 -22.514 -18.308 -40.831 -40.832 -40.831 z m 13.616 403.781 c 0 7.501 -6.108 13.607 -13.616 13.607 h -166.352 c -7.501 0 -13.608 -6.095 -13.608 -13.607 v -362.95 c 0 -7.501 6.107 -13.611 13.608 -13.611 h 166.352 c 7.508 0 13.616 6.109 13.616 13.611 v 362.95 z"/>
@@ -335,7 +401,7 @@ History:
 						<animate id="SolarToHome-fade" attributeName="opacity" values="0;1;1;0" keyTimes="0;0.08;0.92;1" dur="2s" repeatCount="indefinite" />
 					</ellipse>
 				</g>
-				<circle class="ecircle ecircle-solar" r="7" cx="30" cy="10" fill="rgba(255,208,0,0.06)" stroke="#ffd000" stroke-width=".5" filter="url(#glowSolar)" ng-class="{'circle-active': fActualSolar > 0}"/>
+				<circle class="ecircle ecircle-solar" ng-click="openLog(idSolar)" r="7" cx="30" cy="10" fill="rgba(255,208,0,0.06)" stroke="#ffd000" stroke-width=".5" filter="url(#glowSolar)" ng-class="{'circle-active': fActualSolar > 0}"/>
 				<g class="eicon" transform="matrix(0.0095, 0, 0, 0.0095, 27, 4.5)" ng-show="!customIconSolar">
 					<path d="M77.604,241.753l10.047-41.623c-21.697-9.842-38.879-39.91-38.879-65.383c0-40.4,32.761-73.162,73.162-73.162
 						c31.978,0,59.097,20.563,69.049,49.153h28.136c4.574-7.435,17.672-17.408,15.484-22.67c-2.766-6.681-27.566-1.566-31.546-7.515
@@ -366,7 +432,7 @@ History:
 			</g>
 			<line id="lineRT1" x1="50" y1="19" x2="50" y2="22.75" style="stroke:#777;stroke-width:0.2" ng-show="bDisplayRT1"/>
 			<g id="groupGas" ng-show="idGas != -1">
-				<circle class="ecircle ecircle-gas" r="5" cx="50" cy="14" fill="rgba(224,96,64,0.06)" stroke="#e06040" stroke-width=".4" filter="url(#glowGas)"/>
+				<circle class="ecircle ecircle-gas" ng-click="openLog(idGas)" r="5" cx="50" cy="14" fill="rgba(224,96,64,0.06)" stroke="#e06040" stroke-width=".4" filter="url(#glowGas)"/>
 				<g transform="matrix(0.12, 0, 0, 0.12, 48, 10.5)" ng-show="!customIconGas">
 					<path class="eicon" d="M27.588 19.604q1.297 6.002-4.072 10.285-1.659 1.297-3.951 2.021-0.362 0.090-0.392 0.090 1.96-0.754 3.499-2.564 1.598-1.87 1.764-4.177t-1.041-4.358q-1.297-2.232-3.876-6.168t-3.484-5.384l-0.030 0.030q0-0.030-0.030-0.030-0.905 1.448-3.484 5.384t-3.876 6.168q-1.206 2.051-1.041 4.358t1.764 4.177q1.538 1.81 3.499 2.564-0.030 0-0.392-0.090-2.262-0.694-3.951-2.021-5.399-4.313-4.072-10.285 0.603-2.624 2.745-5.911 0.754-1.206 3.318-5.052t3.861-5.987q0.271-0.483 1.659-2.654 1.387 2.172 1.659 2.654 1.327 2.232 4.087 6.379t3.091 4.66q2.172 3.408 2.745 5.911zM19.596 28.2q-1.478 1.87-3.589 1.9-2.081-0.030-3.619-1.9-1.749-2.202-0.392-4.795 0.905-1.659 4.011-6.877 3.016 5.097 3.981 6.877 1.387 2.594-0.392 4.795z"></path>
 				</g>
@@ -378,7 +444,7 @@ History:
 			</g>
 			<line id="lineRB1" x1="50" y1="37.25" x2="50" y2="41" style="stroke:#777;stroke-width:0.2" ng-show="bDisplayRB1"/>
 			<g id="groupWater" ng-attr-transform="{{ water_transform }}" ng-show="idWater!=-1">
-				<circle class="ecircle ecircle-water" r="5" cx="50" cy="46" fill="rgba(128,192,240,0.06)" stroke="#80c0f0" stroke-width=".4" filter="url(#glowWater)"/>
+				<circle class="ecircle ecircle-water" ng-click="openLog(idWater)" r="5" cx="50" cy="46" fill="rgba(128,192,240,0.06)" stroke="#80c0f0" stroke-width=".4" filter="url(#glowWater)"/>
 				<g class="eicon" transform="matrix(0.25, 0, 0, 0.25, 48.55, 42.5)" ng-show="!customIconWater">
 					<path d="M11.08,6.06,6.58.19a.52.52,0,0,0-.8,0L1.28,6.06a6.18,6.18,0,1,0,10.44,6.49A6.13,6.13,0,0,0,11.08,6.06Zm-.26,6A5.07,5.07,0,0,1,6.18,15,5.08,5.08,0,0,1,1.54,12.1a5.08,5.08,0,0,1,.53-5.43L6.18,1.31l4.11,5.36A5.08,5.08,0,0,1,10.82,12.1ZM10.18,10a4,4,0,0,1-4,4,.5.5,0,0,1,0-1,3,3,0,0,0,3-3,.5.5,0,0,1,1,0Z"/>
 				</g>
@@ -389,7 +455,7 @@ History:
 				<text class="etext" x="50" y="49.9" opacity="0.55" font-size="1.2px" text-anchor="middle" style="white-space: pre;" ng-show="waterPrice!=1000">{{ waterPrice | number:2 }} {{ config.CurrencySign }}</text>
 			</g>
 			<g id="groupH1" transform="matrix(1, 0, 0, 1, 54.5, 15)" ng-show="idItemH1 != -1">
-				<circle class="ecircle ecircle-custom" r="5" cx="5" cy="5" fill="rgba(102,128,68,0.06)" stroke="#668044" stroke-width=".4" filter="url(#glowCustom)"/>
+				<circle class="ecircle ecircle-custom" ng-click="openLog(idItemH1)" r="5" cx="5" cy="5" fill="rgba(102,128,68,0.06)" stroke="#668044" stroke-width=".4" filter="url(#glowCustom)"/>
 				<g class="eicon" transform="matrix(1, 0, 0, 1, 0, 0)" ng-show="!customIconH1">
 					<path ng-attr-d="{{ iconItemH1 }}"/>
 				</g>
@@ -403,7 +469,7 @@ History:
 				<text class="etext" x="5" y="8.7" opacity="0.55" font-size="1.2px" text-anchor="middle" style="white-space: pre;" ng-show="h1Price!=1000">{{ h1Price | number:2 }} {{ config.CurrencySign }}</text>
 			</g>
 			<g id="groupH2" transform="matrix(1, 0, 0, 1, 59, 25)" ng-show="idItemH2 != -1">
-				<circle class="ecircle ecircle-custom" r="5" cx="5" cy="5" fill="rgba(102,128,68,0.06)" stroke="#668044" stroke-width=".4" filter="url(#glowCustom)"/>
+				<circle class="ecircle ecircle-custom" ng-click="openLog(idItemH2)" r="5" cx="5" cy="5" fill="rgba(102,128,68,0.06)" stroke="#668044" stroke-width=".4" filter="url(#glowCustom)"/>
 				<g class="eicon" transform="matrix(1, 0, 0, 1, 0, 0)" ng-show="!customIconH2">
 					<path ng-attr-d="{{ iconItemH2 }}"></path>
 				</g>
@@ -416,7 +482,7 @@ History:
 				<text class="etext" x="5" y="8.7" opacity="0.55" font-size="1.2px" text-anchor="middle" style="white-space: pre;" ng-show="h2Price!=1000">{{ h2Price | number:2 }} {{ config.CurrencySign }}</text>
 			</g>
 			<g id="groupH3" transform="matrix(1, 0, 0, 1, 54.5, 35)" ng-show="idItemH3 != -1">
-				<circle class="ecircle ecircle-custom" r="5" cx="5" cy="5" fill="rgba(102,128,68,0.06)" stroke="#668044" stroke-width=".4" filter="url(#glowCustom)"/>
+				<circle class="ecircle ecircle-custom" ng-click="openLog(idItemH3)" r="5" cx="5" cy="5" fill="rgba(102,128,68,0.06)" stroke="#668044" stroke-width=".4" filter="url(#glowCustom)"/>
 				<g class="eicon" transform="matrix(1, 0, 0, 1, 0, 0)" ng-show="!customIconH3">
 					<path ng-attr-d="{{ iconItemH3 }}"></path>
 				</g>
@@ -452,7 +518,7 @@ History:
 
 					<text class="etext" x="30.5" y="31.5" opacity="0.7" font-size="1.1px" text-anchor="start" style="font-variant-caps: normal; font-variant-east-asian: normal; font-variant-ligatures: normal; font-variant-numeric: normal; white-space: pre;">{{ fGridToHome }} Watt</text>
 				</g>
-				<circle class="ecircle ecircle-home" r="7" cx="50" cy="30" fill="rgba(255,123,255,0.06)" stroke="#ff7bff" stroke-width=".5" filter="url(#glowHome)" ng-class="{'circle-active': finalHomeUsage > 0}"/>
+				<circle class="ecircle ecircle-home" ng-click="openHouse()" r="7" cx="50" cy="30" fill="rgba(255,123,255,0.06)" stroke="#ff7bff" stroke-width=".5" filter="url(#glowHome)" ng-class="{'circle-active': finalHomeUsage > 0}"/>
 				<g class="eicon" transform="matrix(0.07, 0, 0, 0.07, 48, 24.5)" ng-show="!useCustomIcons">
 					<path id="pathIconHome" d="M 12.6251 52.6445 L 43.3986 52.6445 C 46.7267 52.6445 48.6722 50.7695 48.6722 47.4648 L 48.6722 26.0664 L 51.6952 28.8320 C 52.1877 29.3008 52.7267 29.6289 53.3829 29.6289 C 54.4845 29.6289 55.3749 28.9492 55.3749 27.8242 C 55.3749 27.1211 55.1171 26.6758 54.6722 26.2774 L 46.5391 18.8476 L 46.5391 5.0430 C 46.5391 4.0117 45.8829 3.3555 44.8519 3.3555 L 41.7813 3.3555 C 40.7735 3.3555 40.0704 4.0117 40.0704 5.0430 L 40.0704 12.9648 L 30.8126 4.5274 C 29.9923 3.7774 29.0079 3.3555 28.0001 3.3555 C 26.9923 3.3555 26.0079 3.7774 25.1876 4.5274 L 1.3282 26.2774 C .9064 26.6758 .6251 27.1211 .6251 27.8242 C .6251 28.9492 1.5157 29.6289 2.6173 29.6289 C 3.2970 29.6289 3.8360 29.3008 4.3048 28.8320 L 7.3282 26.0898 L 7.3282 47.4648 C 7.3282 50.7695 9.2735 52.6445 12.6251 52.6445 Z M 34.7501 33.3086 C 34.7501 32.2305 34.0470 31.5508 32.9689 31.5508 L 23.0313 31.5508 C 21.9532 31.5508 21.2267 32.2305 21.2267 33.3086 L 21.2267 48.8711 L 13.4220 48.8711 C 11.9220 48.8711 11.1017 48.0508 11.1017 46.5273 L 11.1017 22.6445 L 27.1798 7.9961 C 27.4142 7.7617 27.6954 7.6211 28.0001 7.6211 C 28.3048 7.6211 28.5860 7.7383 28.8439 7.9961 L 44.8984 22.6445 L 44.8984 46.5273 C 44.8984 48.0508 44.0781 48.8711 42.6017 48.8711 L 34.7501 48.8711 Z"/>
 				</g>
@@ -464,7 +530,7 @@ History:
 				<text class="etext" x="50" y="35.5" opacity="0.55" font-size="1.2px" text-anchor="middle" style="white-space: pre;" ng-show="idSolar != -1"><tspan font-family="'Font Awesome 7 Free'" font-weight="900" fill="var(--dz-widget-energy-export)">&#xf06c;</tspan> {{ fSelfSufficiency === null ? '-' : (fSelfSufficiency | number:0) + '%' }}</text>
 				</g>
 			<g id="groupNet">
-				<circle class="ecircle ecircle-grid" r="7" cx="10" cy="30" fill="rgba(0,198,218,0.06)" stroke="#00c6da" stroke-width=".5" filter="url(#glowGrid)" ng-class="{'circle-active': fActualNet != 0}"/>
+				<circle class="ecircle ecircle-grid" ng-click="openLog(idP1)" r="7" cx="10" cy="30" fill="rgba(0,198,218,0.06)" stroke="#00c6da" stroke-width=".5" filter="url(#glowGrid)" ng-class="{'circle-active': fActualNet != 0}"/>
 				<g class="eicon" transform="matrix(0.006, 0, 0, 0.007, 8.6, 24)" ng-show="!customIconGrid">
 					<path d="M456.855,72.488L290.673,0h-124.49L0,72.488v62.348h149.276l-85.707,292.02H0.928v30h455v-30h-62.641l-85.707-292.02
 						h149.276V72.488z M184.312,30h88.232v74.836h-88.232V30z M180.542,134.836h95.772l14.531,49.508l-62.417,67.988l-62.417-67.988
@@ -480,6 +546,20 @@ History:
 				<text class="etext" x="10" y="35.8" opacity="0.55" font-size="1.2px" text-anchor="middle" style="white-space: pre;" ng-show="p1Price!=1000">{{ p1Price | number:2 }} {{ config.CurrencySign }}</text>
 			</g>
 		</svg>
+		<div id="housepanel" ng-show="house.open" role="dialog">
+			<div class="hp-head">
+				<span class="hp-title">{{ ::'House' | translate }} - {{ ::'Today' | translate }}</span>
+				<span ng-show="house.selfSufficiency !== null">{{ ::'Self-sufficiency' | translate }}: {{ house.selfSufficiency | number:0 }}%</span>
+				<button type="button" class="hp-close" ng-click="closeHouse()" title="{{ ::'Close' | translate }}">&times;</button>
+			</div>
+			<div class="hp-totals" ng-show="house.hasData">
+				<span><i style="background:#ffd000"></i>{{ ::'Solar' | translate }} {{ house.solar | number:2 }} kWh</span>
+				<span><i style="background:#90e090"></i>{{ ::'Battery' | translate }} {{ house.battery | number:2 }} kWh</span>
+				<span><i style="background:#00c6da"></i>{{ ::'Grid' | translate }} {{ house.grid | number:2 }} kWh</span>
+			</div>
+			<div id="housechart" ng-show="house.hasData"></div>
+			<div class="hp-empty" ng-show="!house.hasData">{{ house.message }}</div>
+		</div>
 		<div id="ltext" ng-show="txtObjText" ng-style="textOverlayStyle" style="position: absolute; z-index: 10; overflow: hidden; box-sizing: border-box;"></div>
 	</div>
 </div>

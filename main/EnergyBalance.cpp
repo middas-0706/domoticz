@@ -253,6 +253,14 @@ namespace
 			eb.SolarToGrid += s2g;
 			eb.BatteryToGrid += b2g;
 			gridToHouseTotal += g2h + b2hGrid;
+
+			_tEnergyBalanceInterval point;
+			point.Date = key;
+			point.Solar = s2h;
+			point.BatterySolar = b2h - b2hGrid;
+			point.BatteryGrid = b2hGrid;
+			point.Grid = g2h;
+			eb.Series.push_back(point);
 		}
 
 		eb.Method = "5min";
