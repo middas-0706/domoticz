@@ -44,8 +44,13 @@ table.jl-t { width: 100%; border-collapse: collapse; font-size: 0.85em; }
 .jl-t th { text-align: left; color: var(--jl-muted); font-weight: normal; padding: 6px 8px; border-bottom: 1px solid var(--jl-line); }
 .jl-t td { padding: 5px 8px; border-bottom: 1px solid rgba(128,128,128,0.12); }
 .jl-t td.n, .jl-t th.n { text-align: right; }
+.jl-t tr.jl-live td { background: rgba(102,187,106,0.10); }
+.jl-t tr.jl-live td:first-child { box-shadow: inset 3px 0 0 var(--jl-green); }
+.jl-t tr.jl-wait td { background: rgba(255,179,102,0.10); }
+.jl-t tr.jl-wait td:first-child { box-shadow: inset 3px 0 0 var(--jl-orange); }
 .jl-pill { padding: 2px 8px; border-radius: 10px; font-size: 0.78em; }
 .jl-pill.live { background: rgba(102,187,106,0.2); color: var(--jl-green); }
+.jl-pill.wait { background: rgba(255,179,102,0.2); color: var(--jl-orange); }
 .jl-pill.done { background: rgba(128,128,128,0.2); color: var(--jl-muted); }
 .jl-kv { width: 100%; border-collapse: collapse; font-size: 0.88em; }
 .jl-kv td { padding: 5px 4px; border-bottom: 1px solid var(--jl-line); }
@@ -156,12 +161,12 @@ table.jl-t { width: 100%; border-collapse: collapse; font-size: 0.85em; }
       <table class="jl-t">
         <thead><tr><th>{{ ::'Date' | translate }}</th><th>{{ ::'Start - End' | translate }}</th><th class="n">{{ ::'Duration' | translate }}</th><th class="n">kWh</th><th class="n" ng-if="hasRealDevice()">{{ ::'Cost' | translate }}</th><th class="n" title="ERE = Emissiereductie-eenheid, the credit Joulo sells for your charged kWh">ERE &#9432;</th><th class="n">ERE &euro;</th><th class="n" ng-if="hasRealDevice()" title="Charging cost minus ERE yield">{{ ::'Net cost' | translate }}</th><th>{{ ::'Status' | translate }}</th></tr></thead>
         <tbody>
-          <tr ng-repeat="s in sessionRows | limitTo: rowLimit">
+          <tr ng-repeat="s in sessionRows | limitTo: rowLimit" ng-class="{'jl-live': s.active && !sessionWaiting(s), 'jl-wait': s.active && sessionWaiting(s)}">
             <td>{{ s.dayLabel }}</td><td>{{ s.startClock }} &ndash; {{ s.endClock || '...' }}</td><td class="n">{{ dur(s.seconds) }}</td><td class="n">{{ s.kwh | number:1 }}</td>
             <td class="n" ng-if="hasRealDevice()" title="{{ s.approx ? ('Several sessions on this day: the day cost of the real charger device is split by kWh, so this is an estimate' | translate) : '' }}"><span ng-if="s.cost != null">{{ s.approx ? '~ ' : '' }}{{ eur(s.cost) }}</span><span ng-if="s.cost == null">-</span></td>
             <td class="n">{{ s.ere | number:1 }}</td><td class="n jl-green">{{ eur(s.yield) }}</td>
             <td class="n" ng-if="hasRealDevice()"><b ng-if="s.cost != null">{{ s.approx ? '~ ' : '' }}{{ eur(s.cost - s.yield) }}</b></td>
-            <td><span class="jl-pill" ng-class="s.active ? 'live' : 'done'">{{ s.active ? ('charging' | translate) : ('completed' | translate) }}</span></td>
+            <td><span class="jl-pill" ng-class="s.active ? (sessionWaiting(s) ? 'wait' : 'live') : 'done'">{{ s.active ? (sessionWaiting(s) ? ('waiting' | translate) : ('charging' | translate)) : ('completed' | translate) }}</span></td>
           </tr>
           <tr ng-if="!sessionRows.length"><td colspan="9" class="jl-empty">{{ ::'No sessions yet. Data is still being added by Joulo.' | translate }}</td></tr>
         </tbody>
@@ -384,6 +389,10 @@ app.controller('jouloCtrl', function ($scope, $http, $timeout, $element, livesoc
   };
   // a session is open but the charger is paused, for example a scheduled charge that has not started
   $scope.isWaiting = function (c) { return !!(c && c.is_charging && String(c.charging_state || '').toLowerCase() === 'paused'); };
+  $scope.sessionWaiting = function (s) {
+    var id = s && s.raw && s.raw.charger_id;
+    return $scope.chargers.some(function (c) { return c.id === id && $scope.isWaiting(c); });
+  };
   $scope.live = function () {
     var c = $scope.selectedCharger();
     if (c) { return c; }
