@@ -37,6 +37,23 @@ Two things it is careful about, both of which produce false results if ignored:
 It also probes the request-size limits, HTTP keep-alive behaviour, and the
 authenticated WebSocket API.
 
+### Barometer history scale
+
+`python/test_barometer.py` checks that every barometer device type shows the
+same hPa in the device list, the day graph, the week graph and the month graph,
+also after all database upgrade steps have run. Temp+Hum+Baro sensors other
+than THBFloat store plain hPa and every other barometer type stores hPa * 10,
+so an upgrade step that rescales the history has to know the device type; this
+test fails on one that does not.
+
+```
+python test/python/test_barometer.py msbuild/x64/Debug/domoticz.exe
+```
+
+It starts its own Domoticz with a throwaway database (same single-instance
+caveat as above) and takes about two minutes, because it waits for Domoticz to
+write the short log.
+
 ### Device calibration (AddjValue/AddjMulti)
 
 `python/test_calibration.py` proves whether calibration offsets (the device

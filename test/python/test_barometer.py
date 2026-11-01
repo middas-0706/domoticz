@@ -196,6 +196,8 @@ def main():
             ba = graph_ba(domo, idx, "month")
             check(label, "month graph ba", HPA, ba.get(day2))
             check(label, "month graph ba (altitude)", HPA_ALTITUDE, ba.get(day3))
+            ba = graph_ba(domo, idx, "week")
+            check(label, "week graph ba", HPA, ba.get(day2))
 
         print("\n=== After all database upgrade steps (DB_Version 175) ===")
         db_write(domo, [("UPDATE Preferences SET nValue = 175 WHERE Key = 'DB_Version'", ())])

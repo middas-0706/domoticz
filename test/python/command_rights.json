@@ -118,6 +118,7 @@
 	"getdevicevalueoptions": "admin",
 	"getdevicevalueoptionwording": "admin",
 	"getdynamicpricedevices": "admin",
+	"getenergybalance": "viewer",
 	"getenergydashboarddevices": "viewer",
 	"getfibarolinkconfig": "admin",
 	"getfibarolinks": "admin",
