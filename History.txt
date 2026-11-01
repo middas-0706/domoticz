@@ -34,6 +34,7 @@ Version 2026.xxxx
 - Fixed: Dashboard Dynamic, the Custom Chart shows data for Pressure, Visibility, Distance, Solar Radiation and Sound Level devices, which showed 'No data to display', and week and month charts include today's value (#7173)
 - Fixed: Dashboard Dynamic, the Website Embed widget shows the 'Script execution enabled' warning only while editing, and sends the Domoticz origin as referrer so sites like YouTube can be embedded (#7038)
 - Fixed: Barometer, the history of Temp+Hum+Baro sensors was 10 times too high after upgrading to 2026.x; an upgrade step had wrongly multiplied the stored day values, they are now restored automatically
+- Fixed: Barometer, thermostats with a barometer (Temp/Baro/Setpoint and Temp/Hum/Baro/Setpoint) show the pressure in the week, month and year graphs, and in the device list also when the value was set without a forecast (for example with the JSON API)
 - Fixed: Database, restoring a backup now checks that the file is a valid Domoticz database before replacing the current one
 - Fixed: dzVents, an integer sValue3 in an IFTTT trigger overwrote sValue2
 - Fixed: dzVents, the YouLess counterDeliveredToday read 0 when the day total was a single digit without decimals, as a YouLess counter with the meter type Counter and no unit shows it

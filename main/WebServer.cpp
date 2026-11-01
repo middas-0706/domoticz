@@ -2556,16 +2556,20 @@ namespace http
 								root["result"][ii]["DewPoint"] = dewpoint;
 								sprintf(szData, "%.1f %c (%.1f %c) / %d%%", temp, tempsign, tempSetPoint, tempsign, humidity);
 							}
-							else if (dSubType == sTypeThermostat6TempBaro && strarray.size() >= 4)
+							else if (dSubType == sTypeThermostat6TempBaro && strarray.size() >= 3)
 							{
+								// The forecast is optional: udevice stores temp;setpoint;baro
 								float barometer = static_cast<float>(atof(strarray[2].c_str()));
-								int forecast = atoi(strarray[3].c_str());
 								root["result"][ii]["Barometer"] = barometer;
-								root["result"][ii]["Forecast"] = forecast;
-								root["result"][ii]["ForecastStr"] = RFX_WSForecast_Desc(forecast);
+								if (strarray.size() >= 4)
+								{
+									int forecast = atoi(strarray[3].c_str());
+									root["result"][ii]["Forecast"] = forecast;
+									root["result"][ii]["ForecastStr"] = RFX_WSForecast_Desc(forecast);
+								}
 								sprintf(szData, "%.1f %c (%.1f %c), %.1f hPa", temp, tempsign, tempSetPoint, tempsign, barometer);
 							}
-							else if (dSubType == sTypeThermostat6TempHumBaro && strarray.size() >= 6)
+							else if (dSubType == sTypeThermostat6TempHumBaro && strarray.size() >= 5)
 							{
 								int humidity = atoi(strarray[2].c_str());
 								root["result"][ii]["Humidity"] = humidity;
@@ -2575,11 +2579,15 @@ namespace http
 								double dewpoint = ConvertTemperature(CalculateDewPoint(temp, humidity), tempsign);
 								root["result"][ii]["DewPoint"] = dewpoint;
 
+								// The forecast is optional: udevice stores temp;setpoint;hum;hum_status;baro
 								float barometer = static_cast<float>(atof(strarray[4].c_str()));
-								int forecast = atoi(strarray[5].c_str());
 								root["result"][ii]["Barometer"] = barometer;
-								root["result"][ii]["Forecast"] = forecast;
-								root["result"][ii]["ForecastStr"] = RFX_WSForecast_Desc(forecast);
+								if (strarray.size() >= 6)
+								{
+									int forecast = atoi(strarray[5].c_str());
+									root["result"][ii]["Forecast"] = forecast;
+									root["result"][ii]["ForecastStr"] = RFX_WSForecast_Desc(forecast);
+								}
 								sprintf(szData, "%.1f %c (%.1f %c), %d%%, %.1f hPa", temp, tempsign, tempSetPoint, tempsign, humidity, barometer);
 							}
 							else

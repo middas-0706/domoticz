@@ -2539,7 +2539,7 @@ void HandleGraphMonthYear(const GraphContext& ctx, const request& req,
 						{
 							root["result"][ii]["hu"] = sd[4];
 						}
-						if ((dType == pTypeTEMP_HUM_BARO) || (dType == pTypeTEMP_BARO) || ((dType == pTypeGeneral) && (dSubType == sTypeBaro)))
+						if ((dType == pTypeTEMP_HUM_BARO) || (dType == pTypeTEMP_BARO) || ((dType == pTypeGeneral) && (dSubType == sTypeBaro)) || ((dType == pTypeThermostat6) && ((dSubType == sTypeThermostat6TempBaro) || (dSubType == sTypeThermostat6TempHumBaro))))
 						{
 							if (dType == pTypeTEMP_HUM_BARO)
 							{
@@ -2556,7 +2556,7 @@ void HandleGraphMonthYear(const GraphContext& ctx, const request& req,
 								snprintf(szTmp, sizeof(szTmp), "%.1f", atof(sd[5].c_str()) / 10.0F);
 								root["result"][ii]["ba"] = szTmp;
 							}
-							else if ((dType == pTypeGeneral) && (dSubType == sTypeBaro))
+							else if (((dType == pTypeGeneral) && (dSubType == sTypeBaro)) || (dType == pTypeThermostat6))
 							{
 								snprintf(szTmp, sizeof(szTmp), "%.1f", atof(sd[5].c_str()) / 10.0F);
 								root["result"][ii]["ba"] = szTmp;
@@ -2646,7 +2646,7 @@ void HandleGraphMonthYear(const GraphContext& ctx, const request& req,
 					{
 						root["result"][ii]["hu"] = sd[4];
 					}
-					if ((dType == pTypeTEMP_HUM_BARO) || (dType == pTypeTEMP_BARO) || ((dType == pTypeGeneral) && (dSubType == sTypeBaro)))
+					if ((dType == pTypeTEMP_HUM_BARO) || (dType == pTypeTEMP_BARO) || ((dType == pTypeGeneral) && (dSubType == sTypeBaro)) || ((dType == pTypeThermostat6) && ((dSubType == sTypeThermostat6TempBaro) || (dSubType == sTypeThermostat6TempHumBaro))))
 					{
 						if (dType == pTypeTEMP_HUM_BARO)
 						{
@@ -2663,7 +2663,7 @@ void HandleGraphMonthYear(const GraphContext& ctx, const request& req,
 							snprintf(szTmp, sizeof(szTmp), "%.1f", atof(sd[5].c_str()) / 10.0F);
 							root["result"][ii]["ba"] = szTmp;
 						}
-						else if ((dType == pTypeGeneral) && (dSubType == sTypeBaro))
+						else if (((dType == pTypeGeneral) && (dSubType == sTypeBaro)) || (dType == pTypeThermostat6))
 						{
 							snprintf(szTmp, sizeof(szTmp), "%.1f", atof(sd[5].c_str()) / 10.0F);
 							root["result"][ii]["ba"] = szTmp;
@@ -2761,7 +2761,7 @@ void HandleGraphMonthYear(const GraphContext& ctx, const request& req,
 						{
 							root["resultprev"][iPrev]["hu"] = sd[4];
 						}
-						if ((dType == pTypeTEMP_HUM_BARO) || (dType == pTypeTEMP_BARO) || ((dType == pTypeGeneral) && (dSubType == sTypeBaro)))
+						if ((dType == pTypeTEMP_HUM_BARO) || (dType == pTypeTEMP_BARO) || ((dType == pTypeGeneral) && (dSubType == sTypeBaro)) || ((dType == pTypeThermostat6) && ((dSubType == sTypeThermostat6TempBaro) || (dSubType == sTypeThermostat6TempHumBaro))))
 						{
 							if (dType == pTypeTEMP_HUM_BARO)
 							{
@@ -2778,7 +2778,7 @@ void HandleGraphMonthYear(const GraphContext& ctx, const request& req,
 								snprintf(szTmp, sizeof(szTmp), "%.1f", atof(sd[5].c_str()) / 10.0F);
 								root["resultprev"][iPrev]["ba"] = szTmp;
 							}
-							else if ((dType == pTypeGeneral) && (dSubType == sTypeBaro))
+							else if (((dType == pTypeGeneral) && (dSubType == sTypeBaro)) || (dType == pTypeThermostat6))
 							{
 								snprintf(szTmp, sizeof(szTmp), "%.1f", atof(sd[5].c_str()) / 10.0F);
 								root["resultprev"][iPrev]["ba"] = szTmp;
